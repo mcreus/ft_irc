@@ -1,17 +1,17 @@
-#ifndef CLIENT_HPP
-# define CLIENT_HPP
+#ifndef USER_HPP
+# define USER_HPP
 
 # include <iostream>
 # include <iomanip>
 # include <string>
 
-class Client
+class User
 {
 	public:
 
-		Client();
-		Client(std::string const &nickName, std::string const &name);
-		~Client();
+		User();
+		User(std::string const &nickName, std::string const &name);
+		~User();
 		std::string const	&getNickName() const;
 		std::string const	&getName() const;
 
