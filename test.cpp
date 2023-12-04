@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   test.c                                             :+:      :+:    :+:   */
+/*   test.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/04 09:22:29 by mcreus            #+#    #+#             */
-/*   Updated: 2023/12/04 09:22:32 by mcreus           ###   ########.fr       */
+/*   Updated: 2023/12/04 16:11:01 by mcreus           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>int	main (int ac, char **av)
+#include <arpa/inet.h>
+
+int	main(int ac, char **av)
 {
 	if (ac != 3)
 		std::cerr << "Error: Your program must be writed as : <program_name><port><password>" << std::endl;
@@ -57,7 +59,8 @@
 		std::cout << size << std::endl;
 		std::cout << "looking for clients..." << std::endl;
 		
-		// listening socket		listen(client, 5);
+		// listening socket		
+        listen(client, 5);
 		server = accept(client, (struct sockaddr*)&server_addr, &size);
 		for (int j = 0; j < 2; j++)
 		{

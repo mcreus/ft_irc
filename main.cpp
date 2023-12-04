@@ -6,7 +6,7 @@
 /*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/24 16:27:03 by mcreus            #+#    #+#             */
-/*   Updated: 2023/11/30 14:23:09 by mcreus           ###   ########.fr       */
+/*   Updated: 2023/12/04 11:33:32 by mcreus           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ int	main (int ac, char **av)
         bool    isExit = false;
         int     bufSize = 1024;
         char    buffer[bufSize];
-		//std::string	password = av[2];
+		std::string	password = av[2];
 
         struct sockaddr_in  server_addr;
         socklen_t    size;
