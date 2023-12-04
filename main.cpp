@@ -6,7 +6,7 @@
 /*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/24 16:27:03 by mcreus            #+#    #+#             */
-/*   Updated: 2023/11/30 14:01:18 by mcreus           ###   ########.fr       */
+/*   Updated: 2023/11/30 14:23:09 by mcreus           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,7 @@ int	main (int ac, char **av)
         
         // listening socket
 
-        listen(client, 1);
+        listen(client, 2);
         server = accept(client, (struct sockaddr*)&server_addr, &size);
 
         if (server < 0)
