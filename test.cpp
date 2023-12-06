@@ -6,7 +6,7 @@
 /*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/04 09:22:29 by mcreus            #+#    #+#             */
-/*   Updated: 2023/12/04 16:11:01 by mcreus           ###   ########.fr       */
+/*   Updated: 2023/12/06 14:48:54 by mcreus           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,8 @@ int	main(int ac, char **av)
 		socklen_t    size;
 		
 		//init socket		buffer[0] = 0;
-		client = socket(AF_INET, SOCK_STREAM, 0);		if (client < 0)
+		client = socket(AF_INET, SOCK_STREAM, 0);		
+        if (client < 0)
 		{
 		    std::cout << "Error establishing connection." << std::endl;
 		    exit (1);
