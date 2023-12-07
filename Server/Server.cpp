@@ -1,14 +1,13 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/11/28 11:55:42 by mcreus            #+#    #+#             */
-/*   Updated: 2023/11/28 11:56:00 by mcreus           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Server.hpp"
 
+Server::Server(int max_client)
+{
+	this->nb_max_client = max_client;
+	this->Users = new User[max_client];
+	this->nb_users = 0;
+}
+
+Server::~Server(void)
+{
+	delete [] this->Users;
+}

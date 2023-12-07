@@ -9,16 +9,18 @@ class User
 {
 	public:
 
-		User();
-		User(std::string const &nickName, std::string const &name);
-		~User();
+		User(void);
+		User(std::string const &new_nickName, std::string const &new_name);
+		~User(void);
 		std::string const	&getNickName() const;
 		std::string const	&getName() const;
+		int			getFd_user();
 
 	private:
 
-		std::string	_nickName;
-		std::string _name;
+		std::string	nickName;
+		std::string	name;
+		int		fd_user;
 
 };
 

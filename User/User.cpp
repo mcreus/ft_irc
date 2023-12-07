@@ -18,10 +18,10 @@ User::User()
     
 }
 
-User::User(std::string const &nickName, std::string const &name)
+User::User(std::string const &new_nickName, std::string const &new_name)
 {
-    this->_name = name;
-    this->_nickName = nickName;
+    this->name = new_name;
+    this->nickName = new_nickName;
 }
 
 User::~User()
@@ -31,10 +31,15 @@ User::~User()
 
 std::string const	&User::getNickName() const
 {
-    return (this->_nickName);
+    return (this->nickName);
 }
 
 std::string const	&User::getName() const
 {
-    return (this->_name);
+    return (this->name);
+}
+
+int	User::getFd_user()
+{
+	return (this->fd_user);
 }

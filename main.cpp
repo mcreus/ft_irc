@@ -1,20 +1,10 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/11/24 16:27:03 by mcreus            #+#    #+#             */
-/*   Updated: 2023/12/04 11:33:32 by mcreus           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include <iostream>
 #include <iomanip>
 #include <cstring>
 #include <cstdlib>
 #include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
 
 //socket
 #include <sys/types.h>
@@ -22,113 +12,132 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-int	main (int ac, char **av)
+//custom lib
+#include "Server/Server.hpp"
+
+int main(int argc , char **argv)   
 {
-	if (ac != 3)
-		std::cerr << "Error: Your program must be writed as : <program_name><port><password>" << std::endl;
-	else
+	if (argc != 3)
+		return (0);
+	int	max_clients = 30;
+	Server	server(max_clients);
+	int	opt = 1;
+	int	master_socket;
+	int	addrlen;
+	int	new_socket;
+	int	client_socket[max_clients];
+	int	activity;
+	int	i;
+	int	valread;
+	int	sd;
+	int	max_sd;
+	int	port = atoi(argv[1]);
+	int	buf = 1024;
+
+	struct sockaddr_in address; 
+
+	std::string message = "ECHO Daemon v1.0 \r\n";	
+	char buffer[buf];
+	fd_set readfds;
+
+	//(void*)server;
+	for (i = 0; i < max_clients; i++)   
+	{   
+		client_socket[i] = 0;   
+	}   
+	if((master_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0)   
+	{   
+		perror("socket failed");   
+		exit(EXIT_FAILURE);   
+	}    
+	if(setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
 	{
-        int client;
-        int server;
-		int	port = atoi(av[1]);
-        bool    isExit = false;
-        int     bufSize = 1024;
-        char    buffer[bufSize];
-		std::string	password = av[2];
-
-        struct sockaddr_in  server_addr;
-        socklen_t    size;
-        
-        //init socket
-
-        client = socket(AF_INET, SOCK_STREAM, 0);
-
-        if (client < 0)
-        {
-            std::cout << "Error establishing connection." << std::endl;
-            exit (1);
-        }
-        std::cout << " server socket connection created..." << std::endl;
-        server_addr.sin_family = AF_INET;
-        server_addr.sin_addr.s_addr = htons(static_cast<unsigned short>(INADDR_ANY));
-        server_addr.sin_port = htons(port);
-        
-        //binding socket
-        
-        if (bind(client, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
-        {
-            std::cout << "Error binding socket..." << std::endl;
-            exit (1);
-        }
-        size = sizeof(server_addr);
-        std::cout << "looking for clients..." << std::endl;
-        
-        // listening socket
-
-        listen(client, 2);
-        server = accept(client, (struct sockaddr*)&server_addr, &size);
-
-        if (server < 0)
-        {
-            std::cout << "Error accepting client..." << std::endl;
-            exit (1);
-        }
-        while (server > 0)
-        {
-            std::strcpy(buffer, "server connected...\n");
-            send(server, buffer, bufSize, 0);
-            
-            std::cout << "Connected with client..." << std::endl;
-            std::cout << "Enter # to end the connection" << std::endl;
-
-            /*std::cout << "client:";
-            do
-            {
-                recv(server, buffer, bufSize, 0);
-                //std::cout << "buffer" << " ";
-                if (*buffer == 0)
-                {
-                    *buffer = '*';
-                    isExit = true;
-                }
-            } while (*buffer != '*');*/
-            do
-            {
-                std::cout << "\nServer: ";
-                do
-                {
-                    std::cin >> buffer;
-                    send(server, buffer, bufSize, 0);
-                    if (*buffer == '#')
-                    {
-                        send(server, buffer, bufSize, 0);
-                        *buffer = '*';
-                        isExit = true;
-                    }
-                } while (*buffer != '*');
-                std::cout << "Client: ";
-                do
-                {
-                    recv(server, buffer, bufSize, 0);
-                    std::cout << buffer << " ";
-                    if (*buffer == '#')
-                    {
-                        *buffer = '*';
-                        isExit = true;
-                    }
-                } while (*buffer != '*');
-            } while (isExit);
-            std::cout << "Connection terminated..." << std::endl;
-            std::cout << "Goodbye..." << std::endl;
-            isExit = false;
-            for (int i = 0; i < bufSize; i++)
-            {
-                buffer[i] = 0;
-            }
-            exit (1);
-        }
-        close(client);
+		perror("setsockopt");   
+		exit(EXIT_FAILURE);   
 	}
-    
-	return (0);
+	address.sin_family = AF_INET;   
+	address.sin_addr.s_addr = INADDR_ANY;   
+	address.sin_port = htons( port );
+	if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0)   
+	{   
+		perror("bind failed");   
+		exit(EXIT_FAILURE);   
+	}   
+	std::cout << "Listener on port " << port << std::endl;
+	if (listen(master_socket, 3) < 0)   
+	{   
+		perror("listen");   
+		exit(EXIT_FAILURE);   
+	}
+	addrlen = sizeof(address);
+	std::cout << "Waiting for connections ...\n";   
+	while(1)   
+	{   
+		FD_ZERO(&readfds);
+		FD_SET(master_socket, &readfds);
+		max_sd = master_socket; 
+		for ( i = 0 ; i < max_clients ; i++)
+		{
+			sd = client_socket[i];
+			if(sd > 0)
+				FD_SET(sd ,&readfds);
+			if(sd > max_sd)
+				max_sd = sd;   
+		}
+		activity = select(max_sd + 1 , &readfds , NULL , NULL , NULL);
+		if ((activity < 0))   
+		{   
+			std::cout << "select error" << std::endl;   
+		}   
+		if (FD_ISSET(master_socket, &readfds))   
+		{
+			if ((new_socket = accept(master_socket,(struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0)   
+			{
+				perror("accept");   
+				exit(EXIT_FAILURE);   
+			}
+			std::cout << "New connection , socket fd is " << new_socket << " , ip is : " <<  inet_ntoa(address.sin_addr) << ", port : " << ntohs(address.sin_port) << std::endl;
+			for (i = 0; i < max_clients; i++)
+			{ 
+				if(client_socket[i] == 0)
+				{   
+					client_socket[i] = new_socket;
+					fcntl(client_socket[i], F_SETFL, O_NONBLOCK);
+					std::cout << "Adding to list of sockets as " << i << std::endl;
+					break;
+				}
+			}
+		}
+		for (i = 0; i < max_clients; i++)   
+		{
+			sd = client_socket[i];
+			if (FD_ISSET(sd, &readfds))   
+			{
+				valread = read(sd, buffer, buf);
+				if (valread == 0)
+				{
+					getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);   
+					std::cout << "Host disconnected , ip " << inet_ntoa(address.sin_addr) << " , port " << ntohs(address.sin_port) << std::endl;    
+					shutdown(sd, SHUT_RDWR);
+					client_socket[i] = 0;
+					max_sd--;
+				}
+				else
+				{
+					buffer[valread] = '\0';
+					message = "name ";
+					message.append(buffer);
+					for (i = 0; i < max_sd; i++)
+					{
+						if (sd != client_socket[i] && client_socket[i] != 0)
+							send(client_socket[i], message.c_str(), message.length(), 0);
+					}
+					buffer[valread] = '\0';
+					message = "";
+				}   
+			}   
+		}   
+	}   
+		 
+	return 0;   
 }
