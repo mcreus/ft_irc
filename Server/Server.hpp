@@ -2,13 +2,58 @@
 # define SERVER_HPP
 
 # include <iostream>
+# include <iomanip>
+# include <cstring>
+# include <cstdlib>
+# include <unistd.h>
+# include <stdio.h>
+# include <map>
+# include "../User/User.hpp"
+
+//socket
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
 
 class Server
 {
     public:
 
+        Server(char **av);
+        ~Server();
+        void    initServer();
+        void    initArgs();
+        void    newConnection();
+        void    listenSocket();
+        int const   &getMasterSocket() const;
+        int const   &getaddrlen() const;
+        int const   &getNewSocket() const;
+        int const   &getMaxClients() const;
+        int const   &getClientSocket() const;
+        int const   &getActivity() const;
+        int const   &getValread() const;
+        int const   &getFd() const;
+        int const   &getMaxFd() const;
+        int const   &getPort() const;
+
     private:
-    
+        
+        int opt;
+        int master_socket;
+        int addrlen;
+        int new_socket;
+        int max_clients;
+        //int *client_socket;
+        int activity;
+        int valread;
+        //int fd;
+        int max_fd;
+        int port;
+        int i;
+        char buffer[1024];
+        fd_set  readfds;
+        std::map<int, User*>   client_socket;
 };
 
 #endif

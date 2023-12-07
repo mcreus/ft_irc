@@ -19,13 +19,13 @@ int main(int argc , char **argv)
 	int	master_socket;
 	int	addrlen;
 	int	new_socket;
-	int	max_clients = 30;
+	int	max_clients = 20;
 	int	client_socket[max_clients];
 	int	activity;
 	int	i;
 	int	valread;
-	int	sd;
-	int	max_sd;
+	int	fd;
+	int	max_fd;
 	int	port = atoi(argv[1]);
 
 	struct sockaddr_in address; 
@@ -72,22 +72,22 @@ int main(int argc , char **argv)
 		FD_ZERO(&readfds);   
 		//add master socket to set  
 		FD_SET(master_socket, &readfds);   
-		max_sd = master_socket;   
+		max_fd = master_socket;   
 		//add child sockets to set  
 		for ( i = 0 ; i < max_clients ; i++)   
 		{   
 			//socket descriptor  
-			sd = client_socket[i];
+			fd = client_socket[i];
 			//if valid socket descriptor then add to read list  
-			if(sd > 0)   
-				FD_SET(sd ,&readfds);   
+			if(fd > 0)   
+				FD_SET(fd ,&readfds);   
 			//highest file descriptor number, need it for the select function  
-			if(sd > max_sd)
-				max_sd = sd;   
+			if(fd > max_fd)
+				max_fd = fd;   
 		}
 		//wait for an activity on one of the sockets , timeout is NULL ,  
 		//so wait indefinitely  
-		activity = select(max_sd + 1 , &readfds , NULL , NULL , NULL);
+		activity = select(max_fd + 1 , &readfds , NULL , NULL , NULL);
 		if ((activity < 0))   
 		{   
 			std::cout << "select error" << std::endl;   
@@ -122,27 +122,27 @@ int main(int argc , char **argv)
 		//else its some IO operation on some other socket 
 		for (i = 0; i < max_clients; i++)   
 		{
-			sd = client_socket[i];   
-			if (FD_ISSET( sd , &readfds))   
+			fd = client_socket[i];   
+			if (FD_ISSET( fd , &readfds))   
 			{
 				//Check if it was for closing , and also read the  
 				//incoming message  
-				if ((valread = read(sd, buffer, 1024)) == 0)
+				if ((valread = read(fd, buffer, 1024)) == 0)
 				{   
 					//Somebody disconnected , get his details and print  
-					getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);   
+					getpeername(fd , (struct sockaddr*)&address , (socklen_t*)&addrlen);   
 					std::cout << "Host disconnected , ip " << inet_ntoa(address.sin_addr) << " , port " << ntohs(address.sin_port) << std::endl;    
-					close(sd);   
+					close(fd);   
 					client_socket[i] = 0;
-					if (max_sd == sd)
+					if (max_fd == fd)
                     {
-                        int j = (sd - 1);
+                        int j = (fd - 1);
                         while (client_socket[j] == 0 && j > 0)
                             j--;
                         if (j != 0)
-                            max_sd = client_socket[j];
+                            max_fd = client_socket[j];
                         else
-                            max_sd = master_socket;
+                            max_fd = master_socket;
                     }
 				}
 				else 
@@ -152,7 +152,7 @@ int main(int argc , char **argv)
 					buffer[valread] = '\0';
 					for (i = 0; i < max_clients; i++)
 					{
-						if (sd != client_socket[i] && client_socket[i] != 0)
+						if (fd != client_socket[i] && client_socket[i] != 0)
 							send(client_socket[i] , buffer , strlen(buffer) , 0 );
 					}
 				}   
