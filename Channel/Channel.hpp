@@ -3,6 +3,8 @@
 
 # include <iomanip>
 # include <iostream>
+# include <map>
+# include "../User/User.hpp"
 
 class Channel
 {
@@ -15,6 +17,9 @@ class Channel
     private:
 
         std::string _name;
+        User    *_user;
+        std::map<std::string, User*> _userInCh;
+
 };
 
 #endif
