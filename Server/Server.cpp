@@ -86,9 +86,6 @@ void	Server::newConnection()
 			this->acceptUser(new_socket);
 		else
 			std::cout << "Client is already connected !!!" << std::endl;
-		/*std::cout << "New connection , socket fd is " << new_socket << " , ip is : " << inet_ntoa(address.sin_addr) << ", port : " << ntohs(address.sin_port) << std::endl;
-		send(new_socket, message.c_str(), message.length(), 0);
-		std::cout << "Welcome message sent successfully\n";*/
 	}
 }
 
@@ -101,9 +98,8 @@ void	Server::acceptUser(int new_socket)
 	std::string	name;
 
 	//variables read
-	std::size_t	found;
-	char		buf[1024];
-	int		end;
+	char	buf[1024];
+	int	end;
 
 	end = read(new_socket, buf, 1024);
 	buf[end - 1] = '\0';
@@ -112,10 +108,10 @@ void	Server::acceptUser(int new_socket)
 	end = read(new_socket, buf, 1024);
 	buf[end - 1] = '\0';
 	password = buf;
-	found = password.find("PASS :");
-	if (found == std::string::npos)
+	if (password.find("PASS :") == std::string::npos)
 	{
 		std::cout << "Missing password\n";
+		write(new_socket, "ERROR Invalid password\n", 23);
 		return ;
 	}
 	password = password.substr(6);
@@ -123,6 +119,7 @@ void	Server::acceptUser(int new_socket)
 	if (password != this->pass)
 	{
 		std::cout << "Wrong password\n";
+		write(new_socket, "ERROR Invalid password\n", 23);
 		return ;
 	}
 	end = read(new_socket, buf, 1024);
@@ -132,8 +129,7 @@ void	Server::acceptUser(int new_socket)
 	end = read(new_socket, buf, 1024);
 	buf[end - 1] = '\0';
 	name = buf;
-	found = name.find(":");
-	name = name.substr(found + 1);
+	name = name.substr(name.find(":") + 1);
 	client_socket.insert(std::pair<int, User*>(new_socket, new User(new_socket, nick_name, name)));
 }
 
@@ -184,21 +180,15 @@ void	Server::sendAllClient(int fd, char *buffer)
 	message.append(" ");
 	message.append(buffer);
 	std::cout << message.c_str() << std::endl;
-	for (; it_new != client_socket.end(); it_new++)
-	{
-                std::map<int, User*>::iterator    it_new = client_socket.begin();
-                std::cout << buffer << "UUUUUUUUUUUUUU" << std::endl;
-                if (buffer == ("#JOIN /" + channelName))
-                {
-                    
-                }
-                else
-                {
-                	for (; it_new != client_socket.end(); it_new++)
-			{
-				if (fd != it_new->first)
-					send(it_new->first, message.c_str(), message.length(), 0);
-			}
+        if (buffer == ("#JOIN /" + channelName))
+        {
+        }
+        else
+        {
+        	for (; it_new != client_socket.end(); it_new++)
+		{
+			if (fd != it_new->first)
+				send(it_new->first, message.c_str(), message.length(), 0);
 		}
 	}
 }
