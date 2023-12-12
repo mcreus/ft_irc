@@ -7,6 +7,9 @@ SRCS	=	main.cpp \
 			Server/Server.cpp \
 			User/User.cpp
 
+SRCS	=	test2.cpp \
+			Server/Server.cpp \
+			User/User.cpp
 OBJS	=	$(SRCS:.cpp=.o)
 
 %.o:%.cpp

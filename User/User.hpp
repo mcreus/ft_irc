@@ -10,7 +10,7 @@ class User
 	public:
 
 		User(void);
-		User(std::string const &new_nickName, std::string const &new_name);
+		User(int new_fd, std::string const &new_nickName, std::string const &new_name);
 		~User(void);
 		std::string const	&getNickName() const;
 		std::string const	&getName() const;
