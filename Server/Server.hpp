@@ -54,6 +54,7 @@ class Server
         char buffer[1024];
         fd_set  readfds;
         std::map<int, User*>   client_socket;
+        std::string channelName;
 };
 
 #endif

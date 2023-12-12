@@ -20,8 +20,11 @@ int main(int argc , char **argv)
     server.initServer();
 	while(1)   
 	{   
+        //std::cout << "init" << std::endl;
 		server.initArgs();
+        //std::cout << "connec" << std::endl;
 		server.newConnection();
+        //std::cout << "socket" << std::endl;
 		server.listenSocket();        
 	}   
 		 

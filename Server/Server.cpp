@@ -6,7 +6,7 @@
 /*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/28 11:55:42 by mcreus            #+#    #+#             */
-/*   Updated: 2023/12/07 17:54:06 by mcreus           ###   ########.fr       */
+/*   Updated: 2023/12/12 12:43:34 by mcreus           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,7 +148,13 @@ void    Server::listenSocket()
 			{   
 				buffer[valread] = '\0';
                 std::map<int, User*>::iterator    it_new = client_socket.begin();
-                std::cout << buffer << std::endl;
+                std::cout << buffer << "UUUUUUUUUUUUUU" << std::endl;
+                if (buffer == ("#JOIN /" + channelName))
+                {
+                    
+                }
+                else
+                    
 				for (; it_new != client_socket.end(); it_new++)
 				{
 					if (it->first != it_new->first)
