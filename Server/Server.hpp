@@ -54,6 +54,7 @@ class Server
         fd_set  readfds;
         std::map<int, User*>   client_socket;
         std::string	pass;
+        std::string	channelName;
 };
 
 #endif

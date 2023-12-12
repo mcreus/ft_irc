@@ -186,8 +186,20 @@ void	Server::sendAllClient(int fd, char *buffer)
 	std::cout << message.c_str() << std::endl;
 	for (; it_new != client_socket.end(); it_new++)
 	{
-		if (fd != it_new->first)
-			send(it_new->first, message.c_str(), message.length(), 0);
+                std::map<int, User*>::iterator    it_new = client_socket.begin();
+                std::cout << buffer << "UUUUUUUUUUUUUU" << std::endl;
+                if (buffer == ("#JOIN /" + channelName))
+                {
+                    
+                }
+                else
+                {
+                	for (; it_new != client_socket.end(); it_new++)
+			{
+				if (fd != it_new->first)
+					send(it_new->first, message.c_str(), message.length(), 0);
+			}
+		}
 	}
 }
 /*int const   &getMasterSocket() const;
