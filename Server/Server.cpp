@@ -111,7 +111,8 @@ void	Server::acceptUser(int new_socket)
 	if (password.find("PASS :") == std::string::npos)
 	{
 		std::cout << "Missing password\n";
-		write(new_socket, "ERROR Invalid password\n", 23);
+		//write(new_socket, "ERROR Invalid password\n", 23);
+        send(new_socket, buf, strlen(buf), 461);
 		return ;
 	}
 	password = password.substr(6);

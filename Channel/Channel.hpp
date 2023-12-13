@@ -17,8 +17,9 @@ class Channel
     private:
 
         std::string _name;
-        User    *_user;
+        User    *_admin;
         std::map<std::string, User*> _userInCh;
+        User    *Channel::admin();
 
 };
 
