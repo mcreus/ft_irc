@@ -98,8 +98,9 @@ void	Server::acceptUser(int new_socket)
 	std::string	name;
 
 	//variables read
-	char	buf[1024];
-	int	end;
+	char		buf[1024];
+	int		end;
+	std::string	message;
 
 	end = read(new_socket, buf, 1024);
 	buf[end - 1] = '\0';
@@ -111,7 +112,9 @@ void	Server::acceptUser(int new_socket)
 	if (password.find("PASS :") == std::string::npos)
 	{
 		std::cout << "Missing password\n";
-		write(new_socket, "ERROR Invalid password\n", 23);
+		message = "ERROR Invalid password\n";
+		send(new_socket, message.c_str(), message.length(), 461);
+		close(new_socket);
 		return ;
 	}
 	password = password.substr(6);
@@ -119,7 +122,9 @@ void	Server::acceptUser(int new_socket)
 	if (password != this->pass)
 	{
 		std::cout << "Wrong password\n";
-		write(new_socket, "ERROR Invalid password\n", 23);
+		message = "ERROR Invalid password\n";
+		send(new_socket, message.c_str(), message.length(), 461);
+		close(new_socket);
 		return ;
 	}
 	end = read(new_socket, buf, 1024);
@@ -137,28 +142,34 @@ void	Server::listenSocket()
 {
 	std::map<int, User*>::iterator	it = client_socket.begin();
 	char	buffer[1024];
-	for (; it != client_socket.end(); it++)
+	while (it != client_socket.end())
 	{
 		if (FD_ISSET( it->first , &readfds))
 		{
 			if ((valread = read(it->first, buffer, 1024)) == 0)
 			{
-				this->disconnection(it->first);
-				it = client_socket.begin();
+				int fd = it->first;
+				it++;
+				this->disconnection(fd);
+				//it = client_socket.begin();
 			}
 			else
 			{
 				buffer[valread] = '\0';
 				this->sendAllClient(it->first, buffer);
+				it++;
 			}
 		}
+		else
+			it++;
 	}
 }
 
 void	Server::disconnection(int fd)
 {
-	getpeername(fd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
+	getpeername(fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
 	std::cout << "Host disconnected , ip " << inet_ntoa(address.sin_addr) << " , port " << ntohs(address.sin_port) << std::endl;
+	delete client_socket[fd];
 	client_socket.erase(fd);
 	close(fd);
 	if (client_socket.empty())
@@ -180,9 +191,6 @@ void	Server::sendAllClient(int fd, char *buffer)
 	message.append(" ");
 	message.append(buffer);
 	std::cout << message.c_str() << std::endl;
-        if (buffer == ("#JOIN /" + channelName))
-        {
-        }
         else
         {
         	for (; it_new != client_socket.end(); it_new++)
@@ -192,6 +200,29 @@ void	Server::sendAllClient(int fd, char *buffer)
 		}
 	}
 }
+
+
+void	Server::sendPrivateMessage(int send_user, char *buffer)
+{
+	std::string			message = buffer;
+	std::string			recv_user = message.substr(8);
+	std::map<int, User*>::iterator	it = client_socket.begin();
+	recv_user = recv_user.assign(recv_user, 0, recv_user.find(" "));
+	
+	while (it != client_socket.end() && it->second->getNickName() != recv_user);
+		it++;
+	if (it == client_socket.end());
+	{
+		message = "ERROR No shuch nick name " + recv_user;
+		send(send_user, message.c_str(), message.length(), 401);
+		return ;
+	}
+	message = it->second->getNickName();
+	message.append(" ");
+	message.append(buffer);
+	send(it->first, message.c_str(), message.length(), 0);
+}
+
 /*int const   &getMasterSocket() const;
 int const   &getaddrlen() const;
 int const   &getNewSocket() const;

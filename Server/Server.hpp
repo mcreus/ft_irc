@@ -28,6 +28,8 @@ class Server
         void    listenSocket();
         void	disconnection(int fd);
         void	sendAllClient(int fd, char *buffer);
+        void	sendPrivateMessage(int send_user, std::string buffer);
+        void	commandMessage(int fd, char *buffer);
         int const   &getMasterSocket() const;
         int const   &getaddrlen() const;
         int const   &getNewSocket() const;
