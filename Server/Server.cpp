@@ -137,21 +137,26 @@ void	Server::listenSocket()
 {
 	std::map<int, User*>::iterator	it = client_socket.begin();
 	char	buffer[1024];
-	for (; it != client_socket.end(); it++)
+	while (it != client_socket.end())
 	{
 		if (FD_ISSET( it->first , &readfds))
 		{
 			if ((valread = read(it->first, buffer, 1024)) == 0)
 			{
-				this->disconnection(it->first);
-				it = client_socket.begin();
+				int fd = it->first;
+				it++;
+				this->disconnection(fd);
+				//it = client_socket.begin();
 			}
 			else
 			{
 				buffer[valread] = '\0';
 				this->sendAllClient(it->first, buffer);
+				it++;
 			}
 		}
+		else
+			it++;
 	}
 }
 
@@ -159,6 +164,7 @@ void	Server::disconnection(int fd)
 {
 	getpeername(fd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
 	std::cout << "Host disconnected , ip " << inet_ntoa(address.sin_addr) << " , port " << ntohs(address.sin_port) << std::endl;
+	delete client_socket[fd];
 	client_socket.erase(fd);
 	close(fd);
 	if (client_socket.empty())
