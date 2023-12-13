@@ -133,32 +133,65 @@ void	Server::acceptUser(int new_socket)
 	client_socket.insert(std::pair<int, User*>(new_socket, new User(new_socket, nick_name, name)));
 }
 
-void	Server::listenSocket()
+void Server::Privmsg(int senderFd, const std::string& targetNick, const std::string& message)
 {
-	std::map<int, User*>::iterator	it = client_socket.begin();
-	char	buffer[1024];
-	while (it != client_socket.end())
-	{
-		if (FD_ISSET( it->first , &readfds))
-		{
-			if ((valread = read(it->first, buffer, 1024)) == 0)
-			{
-				int fd = it->first;
-				it++;
-				this->disconnection(fd);
-				//it = client_socket.begin();
-			}
-			else
-			{
-				buffer[valread] = '\0';
-				this->sendAllClient(it->first, buffer);
-				it++;
-			}
-		}
-		else
-			it++;
-	}
+    std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
+    if (senderIt == client_socket.end())
+    {
+        std::cerr << "User not found" << std::endl;
+        return;
+    }
+    for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
+    {
+        if (it->second->getNickName() == targetNick)
+        {
+            std::cout << "Private message from " << senderIt->second->getNickName() << " to " << targetNick << ": " << message << std::endl;
+            std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + message + "\n";
+            send(it->first, privateMessage.c_str(), privateMessage.length(), 0);
+            return;
+        }
+    }
+    std::cerr << "User not found" << std::endl;
 }
+
+
+void Server::listenSocket() {
+    std::map<int, User*>::iterator it = client_socket.begin();
+    char buffer[1024];
+    while (it != client_socket.end()) 
+    {
+        if (FD_ISSET(it->first, &readfds))
+        {
+            if ((valread = read(it->first, buffer, 1024)) == 0) 
+            {
+                int fd = it->first;
+                it++;
+                this->disconnection(fd);
+            }
+            else
+            {
+                buffer[valread] = '\0';
+                std::string message = buffer;
+                if (message.find("PRIVMSG") == 0)
+                {
+                    std::istringstream iss(message);
+                    std::string command, target, msg;
+                    iss >> command >> target;
+                    std::getline(iss, msg);
+                    msg = msg.substr(msg.find_first_not_of(" \t"));
+                    Privmsg(it->first, target, msg);
+                }
+                else
+                    this->sendAllClient(it->first, buffer);
+
+                it++;
+            }
+        } 
+        else
+            it++;
+    }
+}
+
 
 void	Server::disconnection(int fd)
 {

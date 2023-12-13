@@ -14,6 +14,7 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
+# include <sstream>
 
 class Server
 {
@@ -28,6 +29,7 @@ class Server
         void    listenSocket();
         void	disconnection(int fd);
         void	sendAllClient(int fd, char *buffer);
+        void	Privmsg(int senderFd, const std::string& targetNick, const std::string& message);
         int const   &getMasterSocket() const;
         int const   &getaddrlen() const;
         int const   &getNewSocket() const;
