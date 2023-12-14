@@ -9,6 +9,8 @@ Server::Server(char **av)
 	opt = 1;
 	port = atoi(av[1]);
 	pass = av[2];
+	poll_size = 20;
+    poll_fds = static_cast<struct pollfd*>(calloc(poll_size + 1, sizeof *poll_fds));
 	//client_socket.insert(std::pair<int, User*>(master_socket, new User));
 }
 
@@ -50,50 +52,101 @@ void	Server::initServer()
 		exit(EXIT_FAILURE);
 	}
 	addrlen = sizeof(address);
-	std::cout << "Waiting for connections ..." << std::endl;
+	poll_fds[0].fd = master_socket;
+    poll_fds[0].events = POLLIN;
+    poll_count = 1;
+	//std::cout << "Waiting for connections ..." << std::endl;
 }
 
 void	Server::initArgs()
 {
-	FD_ZERO(&readfds);
-	FD_SET(master_socket, &readfds);
-	max_fd = master_socket;
-	std::map<int, User*>::iterator	it = client_socket.begin();
-	for (; it != client_socket.end(); it++)
+	while(1)
 	{
-		//std::cout << "fd = " << it->first << std::endl;
-		FD_SET(it->first ,&readfds);
-		if(it->first > max_fd)
-			max_fd = it->first;
-	}
-	//std::cout << "max_fd" << max_fd << std::endl;
-	activity = select(max_fd + 1 , &readfds , NULL , NULL , NULL);
-	if (activity < 0)
-		perror("errno");
+		status = poll(poll_fds, poll_count, 5000);
+		if (status < 0)
+		{
+			perror("poll");
+			exit(EXIT_FAILURE);
+		}
+		else if (status ==0)
+		{
+			std::cout << "Waiting ..." << std::endl;
+			continue;
+		}
+		for (int i = 0; i < poll_count; i++) 
+		{
+            if ((poll_fds[i].revents & POLLIN) != 1) {
+                // La socket n'est pas prête à être lue
+                // on s'arrête là et on continue la boucle
+                continue ;
+            }
+            printf("[%d] Ready for I/O operation\n", poll_fds[i].fd);
+            // La socket est prête à être lue !
+            if (poll_fds[i].fd == master_socket) {
+                // La socket est notre socket serveur qui écoute le port
+                Server::newConnection();
+            }
+            else {
+                // La socket est une socket client, on va la lire
+                Server::read_data_from_socket(i);
+            }
+        }
+    }
+
 }
 
 void	Server::initMapCommand()
 {
-	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
+	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("!PRIVMSG", &Server::Privmsg));
 }
 
-void	Server::newConnection()
+void 	Server::newConnection()
 {
-	new_socket = 0;
-	if (FD_ISSET(master_socket, &readfds))
+    new_socket = accept(master_socket, NULL, NULL);
+    if (new_socket == -1) 
 	{
-		if ((new_socket = accept(master_socket,(struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0)
-		{
-			perror("accept");
-			exit(EXIT_FAILURE);
-		}
-		if (client_socket.find(new_socket) == client_socket.end())
-			this->acceptUser(new_socket);
-		else
-			send(new_socket, "462 Already register\n", strlen("462 Already register\n"), 462);
-	}
+        perror("accept");
+		exit(EXIT_FAILURE);
+    }
+    add_to_poll_fds(new_socket);
 }
 
+void Server::read_data_from_socket(int i )
+{
+    char buffer[1024];
+    //char msg_to_send[1024];
+    int bytes_read;
+    //int dest_fd;
+    int sender_fd;
+
+    sender_fd = poll_fds[i].fd;
+    memset(&buffer, '\0', sizeof buffer);
+    bytes_read = recv(sender_fd, buffer, 2024, 0);
+    if (bytes_read <= 0) 
+	{
+        if (bytes_read == 0) 
+		{
+            Server::disconnection(sender_fd);
+        }
+        else 
+		{
+        	std::cout << "error recev\n";
+        }
+        close(sender_fd); // Ferme la socket
+        Server::del_from_poll_fds(i);
+    }
+    else 
+	{
+        // Renvoie le message reçu à toutes les sockets connectées
+        // à part celle du serveur et celle qui l'a envoyée
+        printf("[%d] Got message: %s", sender_fd, buffer);
+		this->command(sender_fd, buffer);
+    
+    }
+
+}
+
+/*
 void	Server::acceptUser(int new_socket)
 {
 	//variables user
@@ -147,7 +200,7 @@ void	Server::acceptUser(int new_socket)
 	name = buf;
 	name = name.substr(name.find(":") + 1);
 	client_socket.insert(std::pair<int, User*>(new_socket, new User(new_socket, nick_name, name)));
-}
+}*/
 
 void Server::Privmsg(int senderFd, char *buffer)
 {
@@ -155,72 +208,37 @@ void Server::Privmsg(int senderFd, char *buffer)
 	std::istringstream iss(message);
 	std::string command, target, msg;
 	iss >> command >> target;
-	msg = message.substr(message.find_first_of(":") + 1);
+	std::getline(iss, msg);
 	msg = msg.substr(msg.find_first_not_of(" \t"));
 	std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
 	if (senderIt == client_socket.end())
 	{
 		std::cerr << "User not found" << std::endl;
-		std::string	error = "401 " + target + ", no such nickname\n";
-		send(senderFd, error.c_str(), error.length(), 401);
 		return;
 	}
 	for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
 	{
 		if (it->second->getNickName() == target)
 		{
-			std::cout << "Private message from " << senderIt->second->getNickName() << " to " << target << ": " << msg << std::endl;
-			std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + " :" + msg + "\n";
+			std::cout << "Private message from " << senderIt->second->getNickName() << " to " << target << ": " << message << std::endl;
+			std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + ' ' + message + "\n";
 			send(it->first, privateMessage.c_str(), privateMessage.length(), 0);
-			return ;
-		}
+			return;
+			}
 	}
 	std::cerr << "User not found" << std::endl;
 }
 
-
-void Server::listenSocket()
-{
-	std::map<int, User*>::iterator it = client_socket.begin();
-	char buffer[1024];
-	while (it != client_socket.end()) 
-	{
-		if (FD_ISSET(it->first, &readfds))
-		{
-			if ((valread = read(it->first, buffer, 1024)) == 0) 
-			{
-				int fd = it->first;
-				it++;
-				this->disconnection(fd);
-			}
-			else
-			{
-				buffer[valread] = '\0';
-				//if (buffer[0] == '!')
-				this->command(it->first, buffer);
-				/*else
-					this->sendAllClient(it->first, buffer);*/
-				it++;
-			}
-		} 
-		else
-			it++;
-	}
-}
-
 void	Server::command(int fd, char *buffer)
 {
+	std::map<std::string, void (Server::*)(int fd, char *buffer)>::iterator	it = map_command.begin();
 	std::string	msg = buffer;
 	std::string	command = msg.assign(msg, 0, msg.find_first_of(" \t"));
-	std::map<std::string, void (Server::*)(int fd, char *buffer)>::iterator	it = map_command.find(command);
 	std::cout << std::endl << command << std::endl;
+	while (it != map_command.end() && it->first != command)
+		it++;
 	if (it != map_command.end())
 		(this->*(it->second))(fd, buffer);
-	else
-	{
-		std::string	error = "421 " + command + ", unknown command\n";
-		send(fd, error.c_str(), error.length(), 421);
-	}
 }
 
 void	Server::disconnection(int fd)
@@ -229,7 +247,7 @@ void	Server::disconnection(int fd)
 	std::cout << "Host disconnected , ip " << inet_ntoa(address.sin_addr) << " , port " << ntohs(address.sin_port) << std::endl;
 	delete client_socket[fd];
 	client_socket.erase(fd);
-	close(fd);
+	//close(fd);
 	if (client_socket.empty())
 		max_fd = master_socket;
 	else
@@ -240,18 +258,24 @@ void	Server::disconnection(int fd)
 	}
 }
 
-void	Server::sendAllClient(int fd, char *buffer)
+void Server::add_to_poll_fds(int new_fd) 
 {
-	std::map<int, User*>::iterator	it = client_socket.find(fd);
-	std::map<int, User*>::iterator	it_new = client_socket.begin();
-	std::string	message = it->second->getNickName();
-
-	message.append(" ");
-	message.append(buffer);
-	std::cout << message.c_str() << std::endl;
-	for (; it_new != client_socket.end(); it_new++)
+    // S'il n'y a pas assez de place, il faut réallouer le tableau de poll_fds
+    if (poll_count == poll_size) 
 	{
-		if (fd != it_new->first)
-			send(it_new->first, message.c_str(), message.length(), 0);
-	}
+        poll_size *= 2; // Double la taille
+        poll_fds = static_cast<struct pollfd*>(realloc(poll_fds, sizeof(*poll_fds) * (poll_size)));
+    }
+    poll_fds[poll_count].fd = new_fd;
+    poll_fds[poll_count].events = POLLIN;
+    poll_count++;
 }
+
+// Supprimer un fd du tableau poll_fds
+void Server::del_from_poll_fds(int i) 
+{
+    // Copie le fd de la fin du tableau à cet index
+    poll_fds[i] = poll_fds[poll_count - 1];
+    poll_count--;
+}
+

@@ -17,6 +17,8 @@
 # include <arpa/inet.h>
 # include <sstream>
 
+#include <poll.h>
+
 class Server
 {
     public:
@@ -35,7 +37,10 @@ class Server
         void	command(int fd, char *buffer);
         void    createChannel();
         void    joinChannel();
-    
+
+        void    read_data_from_socket(int i);
+        void    add_to_poll_fds(int new_socket);
+        void    del_from_poll_fds(int i);
 
     private:
         
@@ -48,8 +53,13 @@ class Server
         int	valread;
         int	max_fd;
         int	port;
-        int	i;
-        fd_set  readfds;
+        //int	i;
+        //fd_set  readfds;
+        int status;
+        struct  pollfd *poll_fds;
+        int poll_size;
+        int poll_count;
+
         std::map<int, User*>   client_socket;
         std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
         std::string	pass;
