@@ -74,7 +74,7 @@ void	Server::initArgs()
 
 void	Server::initMapCommand()
 {
-	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("!PRIVMSG", &Server::Privmsg));
+	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
 }
 
 void	Server::newConnection()
@@ -90,7 +90,7 @@ void	Server::newConnection()
 		if (client_socket.find(new_socket) == client_socket.end())
 			this->acceptUser(new_socket);
 		else
-			std::cout << "Client is already connected !!!" << std::endl;
+			send(new_socket, "462 Already register\n", strlen("462 Already register\n"), 462);
 	}
 }
 
@@ -101,6 +101,8 @@ void	Server::acceptUser(int new_socket)
 	std::string	password;
 	std::string	nick_name;
 	std::string	name;
+	std::string	error;
+	std::map<int, User*>::iterator it = client_socket.begin();
 
 	//variables read
 	char	buf[1024];
@@ -116,8 +118,7 @@ void	Server::acceptUser(int new_socket)
 	if (password.find("PASS :") == std::string::npos)
 	{
 		std::cout << "Missing password\n";
-		//write(new_socket, "ERROR Invalid password\n", 23);
-        send(new_socket, buf, strlen(buf), 461);
+       	send(new_socket, "461 Missing password\n", strlen("461 Missing password\n"), 461);
 		return ;
 	}
 	password = password.substr(6);
@@ -125,13 +126,22 @@ void	Server::acceptUser(int new_socket)
 	if (password != this->pass)
 	{
 		std::cout << "Wrong password\n";
-		write(new_socket, "ERROR Invalid password\n", 23);
+		send(new_socket, "464 Password incorect\n", strlen("464 Password incorect\n"), 464);
 		return ;
 	}
 	end = read(new_socket, buf, 1024);
 	buf[end - 1] = '\0';
 	nick_name = buf;
 	nick_name = nick_name.substr(5);
+	for (; it != client_socket.end(); it++)
+	{
+		if (it->second->getNickName() == nick_name)
+		{
+			error = "433 " + nick_name + ", nickname is already in use\n";
+			send(new_socket, error.c_str(), error.length(), 433);
+			return ;
+		}
+	}
 	end = read(new_socket, buf, 1024);
 	buf[end - 1] = '\0';
 	name = buf;
@@ -141,31 +151,32 @@ void	Server::acceptUser(int new_socket)
 
 void Server::Privmsg(int senderFd, char *buffer)
 {
-    std::string message = buffer;
-    std::istringstream iss(message);
-    std::string command, target, msg;
-    iss >> command >> target;
-    msg = message.substr(message.find_first_of(":") + 1);
-    msg = msg.substr(msg.find_first_not_of(" \t"));
-    std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
-    if (senderIt == client_socket.end())
-    {
-        std::cerr << "User not found" << std::endl;
-        return;
-    }
-    for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
-    {
-        if (it->second->getNickName() == target)
-        {
+	std::string message = buffer;
+	std::istringstream iss(message);
+	std::string command, target, msg;
+	iss >> command >> target;
+	msg = message.substr(message.find_first_of(":") + 1);
+	msg = msg.substr(msg.find_first_not_of(" \t"));
+	std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
+	if (senderIt == client_socket.end())
+	{
+		std::cerr << "User not found" << std::endl;
+		std::string	error = "401 " + target + ", no such nickname\n";
+		send(senderFd, error.c_str(), error.length(), 401);
+		return;
+	}
+	for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
+	{
+		if (it->second->getNickName() == target)
+		{
 			std::cout << "Private message from " << senderIt->second->getNickName() << " to " << target << ": " << msg << std::endl;
-            std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + " :" + msg + "\n";
-            send(it->first, privateMessage.c_str(), privateMessage.length(), 0);
-            return;
-        }
-    }
-    std::cerr << "User not found" << std::endl;
+			std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + " :" + msg + "\n";
+			send(it->first, privateMessage.c_str(), privateMessage.length(), 0);
+			return ;
+		}
+	}
+	std::cerr << "User not found" << std::endl;
 }
-
 
 
 void Server::listenSocket()
@@ -185,11 +196,10 @@ void Server::listenSocket()
 			else
 			{
 				buffer[valread] = '\0';
-				std::cout << buffer[0] << std::endl;
-				if (buffer[0] == '!')
-					this->command(it->first, buffer);
-				else
-					this->sendAllClient(it->first, buffer);
+				//if (buffer[0] == '!')
+				this->command(it->first, buffer);
+				/*else
+					this->sendAllClient(it->first, buffer);*/
 				it++;
 			}
 		} 
@@ -200,14 +210,17 @@ void Server::listenSocket()
 
 void	Server::command(int fd, char *buffer)
 {
-	std::map<std::string, void (Server::*)(int fd, char *buffer)>::iterator	it = map_command.begin();
 	std::string	msg = buffer;
 	std::string	command = msg.assign(msg, 0, msg.find_first_of(" \t"));
+	std::map<std::string, void (Server::*)(int fd, char *buffer)>::iterator	it = map_command.find(command);
 	std::cout << std::endl << command << std::endl;
-	while (it != map_command.end() && it->first != command)
-		it++;
 	if (it != map_command.end())
 		(this->*(it->second))(fd, buffer);
+	else
+	{
+		std::string	error = "421 " + command + ", unknown command\n";
+		send(fd, error.c_str(), error.length(), 421);
+	}
 }
 
 void	Server::disconnection(int fd)
@@ -236,16 +249,9 @@ void	Server::sendAllClient(int fd, char *buffer)
 	message.append(" ");
 	message.append(buffer);
 	std::cout << message.c_str() << std::endl;
-	
-		for (; it_new != client_socket.end(); it_new++)
-		{
-			if (fd != it_new->first)
-				send(it_new->first, message.c_str(), message.length(), 0);
-		}
-	
+	for (; it_new != client_socket.end(); it_new++)
+	{
+		if (fd != it_new->first)
+			send(it_new->first, message.c_str(), message.length(), 0);
+	}
 }
-
-/*int const   &Server::getPort() const
-{
-	return (port);
-}*/
