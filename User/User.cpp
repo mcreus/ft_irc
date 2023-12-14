@@ -6,7 +6,7 @@
 /*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/27 14:05:16 by mcreus            #+#    #+#             */
-/*   Updated: 2023/12/04 18:00:49 by mcreus           ###   ########.fr       */
+/*   Updated: 2023/12/07 18:31:21 by gcot             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,13 @@ User::User()
     
 }
 
-User::User(std::string const &nickName, std::string const &name)
+User::User(int new_fd, std::string const &new_nickName, std::string const &new_name)
 {
-    this->_name = name;
-    this->_nickName = nickName;
+	this->name = new_name;
+	this->nickName = new_nickName;
+	this->fd_user = new_fd;
+
+	write(new_fd, "Info Welcome in Corddis\n", 24);
 }
 
 User::~User()
@@ -31,10 +34,15 @@ User::~User()
 
 std::string const	&User::getNickName() const
 {
-    return (this->_nickName);
+    return (this->nickName);
 }
 
 std::string const	&User::getName() const
 {
-    return (this->_name);
+    return (this->name);
+}
+
+int	User::getFd_user()
+{
+	return (this->fd_user);
 }

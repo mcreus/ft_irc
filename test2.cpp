@@ -16,12 +16,16 @@ int main(int argc , char **argv)
 {
 	if (argc != 3)
 		return (0);
-    Server  server(argv);
-    server.initServer();
+	Server  server(argv);
+	server.initServer();
+	server.initMapCommand();
 	while(1)   
-	{   
+	{
+        //std::cout << "init" << std::endl;
 		server.initArgs();
+        //std::cout << "connec" << std::endl;
 		server.newConnection();
+        //std::cout << "socket" << std::endl;
 		server.listenSocket();        
 	}   
 		 
