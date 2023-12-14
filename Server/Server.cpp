@@ -235,20 +235,16 @@ void	Server::sendAllClient(int fd, char *buffer)
 	message.append(" ");
 	message.append(buffer);
 	std::cout << message.c_str() << std::endl;
-	if (buffer == ("#JOIN /" + _channel.getName()))
-	{
-	}
-	else
-	{
+	
 		for (; it_new != client_socket.end(); it_new++)
 		{
 			if (fd != it_new->first)
 				send(it_new->first, message.c_str(), message.length(), 0);
 		}
-	}
+	
 }
 
-int const   &Server::getPort() const
+/*int const   &Server::getPort() const
 {
 	return (port);
-}
+}*/

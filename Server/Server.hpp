@@ -35,7 +35,7 @@ class Server
         void	command(int fd, char *buffer);
         void    createChannel();
         void    joinChannel();
-        int const   &Server::getPort() const;
+    
 
     private:
         
@@ -54,7 +54,7 @@ class Server
         std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
         std::string	pass;
         std::map<std::string, Channel *> _channel;
-        Channel _channel;
+        //Channel _channel;
 };
 
 #endif
