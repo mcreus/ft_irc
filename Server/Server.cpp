@@ -11,7 +11,6 @@ Server::Server(char **av)
 	pass = av[2];
 	poll_size = 20;
     poll_fds = static_cast<struct pollfd*>(calloc(poll_size + 1, sizeof *poll_fds));
-	//client_socket.insert(std::pair<int, User*>(master_socket, new User));
 }
 
 Server::~Server()
@@ -55,7 +54,6 @@ void	Server::initServer()
 	poll_fds[0].fd = master_socket;
     poll_fds[0].events = POLLIN;
     poll_count = 1;
-	//std::cout << "Waiting for connections ..." << std::endl;
 }
 
 void	Server::initArgs()
@@ -118,6 +116,7 @@ void Server::read_data_from_socket(int i )
     int bytes_read;
     //int dest_fd;
     int sender_fd;
+	static int start = 0;
 
     sender_fd = poll_fds[i].fd;
     memset(&buffer, '\0', sizeof buffer);
@@ -139,8 +138,18 @@ void Server::read_data_from_socket(int i )
 	{
         // Renvoie le message reçu à toutes les sockets connectées
         // à part celle du serveur et celle qui l'a envoyée
-        printf("[%d] Got message: %s", sender_fd, buffer);
-		this->command(sender_fd, buffer);
+		if (client_socket.find(sender_fd) == client_socket.end())
+		{
+			printf("[%d] Got message: %s", sender_fd, buffer);
+			if (start >= 3)
+				client_socket.insert(std::pair<int, User*>(sender_fd, new User(sender_fd, "nick_name", "name")));
+			start++;    	
+		}
+		else
+		{
+			start = 0;
+			this->command(sender_fd, buffer);
+		}
     
     }
 
