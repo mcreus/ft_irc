@@ -141,30 +141,31 @@ void	Server::acceptUser(int new_socket)
 
 void Server::Privmsg(int senderFd, char *buffer)
 {
-	std::string message = buffer;
-	std::istringstream iss(message);
-	std::string command, target, msg;
-	iss >> command >> target;
-	std::getline(iss, msg);
-	msg = msg.substr(msg.find_first_not_of(" \t"));
-	std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
-	if (senderIt == client_socket.end())
-	{
-		std::cerr << "User not found" << std::endl;
-		return;
-	}
-	for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
-	{
-		if (it->second->getNickName() == target)
-		{
-			std::cout << "Private message from " << senderIt->second->getNickName() << " to " << target << ": " << message << std::endl;
-			std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + ' ' + message + "\n";
-			send(it->first, privateMessage.c_str(), privateMessage.length(), 0);
-			return;
-			}
-	}
-	std::cerr << "User not found" << std::endl;
+    std::string message = buffer;
+    std::istringstream iss(message);
+    std::string command, target, msg;
+    iss >> command >> target;
+    msg = message.substr(message.find_first_of(":") + 1);
+    msg = msg.substr(msg.find_first_not_of(" \t"));
+    std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
+    if (senderIt == client_socket.end())
+    {
+        std::cerr << "User not found" << std::endl;
+        return;
+    }
+    for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
+    {
+        if (it->second->getNickName() == target)
+        {
+			std::cout << "Private message from " << senderIt->second->getNickName() << " to " << target << ": " << msg << std::endl;
+            std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + " :" + msg + "\n";
+            send(it->first, privateMessage.c_str(), privateMessage.length(), 0);
+            return;
+        }
+    }
+    std::cerr << "User not found" << std::endl;
 }
+
 
 
 void Server::listenSocket()
