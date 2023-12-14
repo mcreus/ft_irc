@@ -72,6 +72,11 @@ void	Server::initArgs()
 		perror("errno");
 }
 
+void	Server::initMapCommand()
+{
+	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("!PRIVMSG", &Server::Privmsg));
+}
+
 void	Server::newConnection()
 {
 	new_socket = 0;
@@ -134,31 +139,74 @@ void	Server::acceptUser(int new_socket)
 	client_socket.insert(std::pair<int, User*>(new_socket, new User(new_socket, nick_name, name)));
 }
 
-void	Server::listenSocket()
+void Server::Privmsg(int senderFd, char *buffer)
 {
-	std::map<int, User*>::iterator	it = client_socket.begin();
-	char	buffer[1024];
-	while (it != client_socket.end())
+	std::string message = buffer;
+	std::istringstream iss(message);
+	std::string command, target, msg;
+	iss >> command >> target;
+	std::getline(iss, msg);
+	msg = msg.substr(msg.find_first_not_of(" \t"));
+	std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
+	if (senderIt == client_socket.end())
 	{
-		if (FD_ISSET( it->first , &readfds))
+		std::cerr << "User not found" << std::endl;
+		return;
+	}
+	for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
+	{
+		if (it->second->getNickName() == target)
 		{
-			if ((valread = read(it->first, buffer, 1024)) == 0)
+			std::cout << "Private message from " << senderIt->second->getNickName() << " to " << target << ": " << message << std::endl;
+			std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + ' ' + message + "\n";
+			send(it->first, privateMessage.c_str(), privateMessage.length(), 0);
+			return;
+			}
+	}
+	std::cerr << "User not found" << std::endl;
+}
+
+
+void Server::listenSocket()
+{
+	std::map<int, User*>::iterator it = client_socket.begin();
+	char buffer[1024];
+	while (it != client_socket.end()) 
+	{
+		if (FD_ISSET(it->first, &readfds))
+		{
+			if ((valread = read(it->first, buffer, 1024)) == 0) 
 			{
 				int fd = it->first;
 				it++;
 				this->disconnection(fd);
-				//it = client_socket.begin();
 			}
 			else
 			{
 				buffer[valread] = '\0';
-				this->sendAllClient(it->first, buffer);
+				std::cout << buffer[0] << std::endl;
+				if (buffer[0] == '!')
+					this->command(it->first, buffer);
+				else
+					this->sendAllClient(it->first, buffer);
 				it++;
 			}
-		}
+		} 
 		else
 			it++;
 	}
+}
+
+void	Server::command(int fd, char *buffer)
+{
+	std::map<std::string, void (Server::*)(int fd, char *buffer)>::iterator	it = map_command.begin();
+	std::string	msg = buffer;
+	std::string	command = msg.assign(msg, 0, msg.find_first_of(" \t"));
+	std::cout << std::endl << command << std::endl;
+	while (it != map_command.end() && it->first != command)
+		it++;
+	if (it != map_command.end())
+		(this->*(it->second))(fd, buffer);
 }
 
 void	Server::disconnection(int fd)
@@ -187,12 +235,12 @@ void	Server::sendAllClient(int fd, char *buffer)
 	message.append(" ");
 	message.append(buffer);
 	std::cout << message.c_str() << std::endl;
-        if (buffer == ("#JOIN /" + channelName))
-        {
-        }
-        else
-        {
-        	for (; it_new != client_socket.end(); it_new++)
+	if (buffer == ("#JOIN /" + channelName))
+	{
+	}
+	else
+	{
+		for (; it_new != client_socket.end(); it_new++)
 		{
 			if (fd != it_new->first)
 				send(it_new->first, message.c_str(), message.length(), 0);

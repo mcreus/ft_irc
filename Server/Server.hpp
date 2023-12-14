@@ -14,6 +14,7 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
+# include <sstream>
 
 class Server
 {
@@ -28,6 +29,9 @@ class Server
         void    listenSocket();
         void	disconnection(int fd);
         void	sendAllClient(int fd, char *buffer);
+        void	Privmsg(int senderFd, char *buffer);
+        void	initMapCommand(void);
+        void	command(int fd, char *buffer);
         int const   &getMasterSocket() const;
         int const   &getaddrlen() const;
         int const   &getNewSocket() const;
@@ -53,6 +57,7 @@ class Server
         int	i;
         fd_set  readfds;
         std::map<int, User*>   client_socket;
+        std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
         std::string	pass;
         std::string	channelName;
 };
