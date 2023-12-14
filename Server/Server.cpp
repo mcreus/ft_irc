@@ -235,7 +235,7 @@ void	Server::sendAllClient(int fd, char *buffer)
 	message.append(" ");
 	message.append(buffer);
 	std::cout << message.c_str() << std::endl;
-	if (buffer == ("#JOIN /" + channelName))
+	if (buffer == ("#JOIN /" + _channel.getName()))
 	{
 	}
 	else
@@ -247,15 +247,6 @@ void	Server::sendAllClient(int fd, char *buffer)
 		}
 	}
 }
-/*int const   &getMasterSocket() const;
-int const   &getaddrlen() const;
-int const   &getNewSocket() const;
-int const   &getMaxClients() const;
-int const   &getClientSocket() const;
-int const   &getActivity() const;
-int const   &getValread() const;
-int const   &getFd() const;
-int const   &getMaxFd() const;*/
 
 int const   &Server::getPort() const
 {

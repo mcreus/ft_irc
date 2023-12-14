@@ -8,6 +8,7 @@
 # include <stdio.h>
 # include <map>
 # include "../User/User.hpp"
+# include "../Channel/Channel.hpp"
 
 //socket
 # include <sys/types.h>
@@ -32,16 +33,9 @@ class Server
         void	Privmsg(int senderFd, char *buffer);
         void	initMapCommand(void);
         void	command(int fd, char *buffer);
-        int const   &getMasterSocket() const;
-        int const   &getaddrlen() const;
-        int const   &getNewSocket() const;
-        int const   &getMaxClients() const;
-        int const   &getClientSocket() const;
-        int const   &getActivity() const;
-        int const   &getValread() const;
-        int const   &getFd() const;
-        int const   &getMaxFd() const;
-        int const   &getPort() const;
+        void    createChannel();
+        void    joinChannel();
+        int const   &Server::getPort() const;
 
     private:
         
@@ -59,7 +53,8 @@ class Server
         std::map<int, User*>   client_socket;
         std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
         std::string	pass;
-        std::string	channelName;
+        std::map<std::string, Channel *> _channel;
+        Channel _channel;
 };
 
 #endif
