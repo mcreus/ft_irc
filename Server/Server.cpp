@@ -218,7 +218,16 @@ void	Server::acceptUser(int new_socket)
 	client_socket.insert(std::pair<int, User*>(new_socket, new User(new_socket, nick_name, name)));
 }*/
 
-void Server::Privmsg(int senderFd, char *buffer)
+void	Server::Privmsg(int fd, char *buffer)
+{
+	std::string message = buffer;
+	if (message.find("#") == std::string::npos)
+		this->PrivmsgUser(fd, buffer);
+	else
+		this->PrivmsgChannel(fd, buffer);
+}
+
+void	Server::PrivmsgUser(int fd, char *buffer)
 {
 	std::string message = buffer;
 	std::istringstream iss(message);
@@ -226,7 +235,7 @@ void Server::Privmsg(int senderFd, char *buffer)
 	iss >> command >> target;
 	std::getline(iss, msg);
 	msg = msg.substr(msg.find_first_not_of(" \t"));
-	std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
+	std::map<int, User*>::iterator senderIt = client_socket.find(fd);
 	if (senderIt == client_socket.end())
 	{
 		std::cerr << "User not found" << std::endl;
@@ -243,6 +252,25 @@ void Server::Privmsg(int senderFd, char *buffer)
 			}
 	}
 	std::cerr << "User not found" << std::endl;
+}
+
+void	Server::PrivmsgChannel(int fd, char *buffer)
+{
+	std::string message = buffer;
+	std::istringstream iss(message);
+	std::string command, target, msg;
+	iss >> command >> target;
+	std::getline(iss, msg);
+	msg = msg.substr(msg.find_first_not_of(" \t"));
+	std::map<int, User*>::iterator senderIt = client_socket.find(fd);
+	std::map<std::string, Channel *>::iterator channel = _channels.find(target);
+	if (channel ==_channels.end())
+	{
+		std::cerr << "Channel not found" << std::endl;
+		return;
+	}
+	(void) senderIt;
+	/*envoi le message a tout le channel*/
 }
 
 void	Server::command(int fd, char *buffer)

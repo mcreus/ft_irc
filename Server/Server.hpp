@@ -33,7 +33,9 @@ class Server
         void    listenSocket();
         void	disconnection(int fd);
         void	sendAllClient(int fd, char *buffer);
-        void	Privmsg(int senderFd, char *buffer);
+        void	Privmsg(int fd, char *buffer);
+        void	PrivmsgUser(int fd, char *buffer);
+        void	PrivmsgChannel(int fd, char *buffer);
         void	initMapCommand(void);
         void	command(int fd, char *buffer);
         void    read_data_from_socket(int i);
