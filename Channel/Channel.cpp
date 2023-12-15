@@ -59,3 +59,4 @@ void Channel::removeUser(int userId)
     if (users.empty())
     	delete this;
 }
+
