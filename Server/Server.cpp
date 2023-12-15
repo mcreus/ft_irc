@@ -10,10 +10,6 @@ Server::Server(char **av)
 	port = atoi(av[1]);
 	pass = av[2];
 	poll_size = 20;
-<<<<<<< HEAD
-	//poll_fds[poll_size + 1];
-=======
->>>>>>> aperrein
 }
 
 Server::~Server()
@@ -55,14 +51,9 @@ void	Server::initServer()
 	}
 	addrlen = sizeof(address);
 	poll_fds[0].fd = master_socket;
-<<<<<<< HEAD
-	poll_fds[0].events = POLLIN;
-	poll_count = 1;
-=======
     poll_fds[0].events = POLLIN;
 	poll_fds[0].revents = 0;
     poll_count = 1;
->>>>>>> aperrein
 }
 
 void	Server::initArgs()
@@ -82,25 +73,6 @@ void	Server::initArgs()
 		}
 		for (int i = 0; i < poll_count; i++) 
 		{
-<<<<<<< HEAD
-			if ((poll_fds[i].revents & POLLIN) != 1) {
-				// La socket n'est pas prête à être lue
-				// on s'arrête là et on continue la boucle
-				continue ;
-			}
-			printf("[%d] Ready for I/O operation\n", poll_fds[i].fd);
-			// La socket est prête à être lue !
-			if (poll_fds[i].fd == master_socket) {
-				// La socket est notre socket serveur qui écoute le port
-				Server::newConnection();
-			}
-			else {
-				// La socket est une socket client, on va la lire
-				Server::read_data_from_socket(i);
-			}
-		}
-	}
-=======
             if ((poll_fds[i].revents & POLLIN) != 1) {
                 // La socket n'est pas prête à être lue
                 // on s'arrête là et on continue la boucle
@@ -120,19 +92,13 @@ void	Server::initArgs()
             }
         }
     }
->>>>>>> aperrein
 
 }
 
 void	Server::initMapCommand()
 {
-<<<<<<< HEAD
-	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
-	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
-=======
 	//map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
    // map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
->>>>>>> aperrein
 }
 
 void 	Server::newConnection()
@@ -148,18 +114,9 @@ void 	Server::newConnection()
 
 void Server::read_data_from_socket(int i )
 {
-<<<<<<< HEAD
-	char buffer[1024];
-	//char msg_to_send[1024];
-	int bytes_read;
-	//int dest_fd;
-	int sender_fd;
-	//static int start = 0;
-=======
     char buffer[1024];
     int bytes_read;
     int sender_fd;
->>>>>>> aperrein
 
 	sender_fd = poll_fds[i].fd;
 	memset(&buffer, '\0', sizeof buffer);
@@ -182,31 +139,13 @@ void Server::read_data_from_socket(int i )
 		if (client_socket.find(sender_fd) == client_socket.end())
 		{
 			_buffer[sender_fd] += buffer;
-<<<<<<< HEAD
-			//std::cout << sender_fd << " a recu :" << buffer;
-			
- 			if (std::count(_buffer[sender_fd].begin(), _buffer[sender_fd].end(), '\n') >= 4)
-			{
-				std::cout << "usercreation\n";
-				std::cout << "le buffer total est :" << _buffer[sender_fd];
-				client_socket.insert(std::pair<int, User*>(sender_fd, new User(sender_fd, "nick_name", "name")));
-			}
-			//std::cout << "apres le buffer\n";
-			//start++;		
-=======
 			Server::acceptUser(sender_fd, _buffer[sender_fd]);
->>>>>>> aperrein
 		}
 		else
 		{
 			this->command(sender_fd, buffer);
 		}
-<<<<<<< HEAD
-	
-	}
-=======
     }
->>>>>>> aperrein
 
 }
 
@@ -332,22 +271,10 @@ void	Server::disconnection(int fd)
 // Ajouter un fd qui attend en lcture et ecriture dans le poll_fds
 void Server::add_to_poll_fds(int new_fd) 
 {
-<<<<<<< HEAD
-	// S'il n'y a pas assez de place, il faut réallouer le tableau de poll_fds
-	/*if (poll_count == poll_size) 
-	{
-		poll_size *= 2; // Double la taille
-		poll_fds = static_cast<struct pollfd*>(realloc(poll_fds, sizeof(*poll_fds) * (poll_size)));
-	}*/
-	poll_fds[poll_count].fd = new_fd;
-	poll_fds[poll_count].events = POLLIN;
-	poll_count++;
-=======
     poll_fds[poll_count].fd = new_fd;
     poll_fds[poll_count].events = POLLIN | POLLOUT;
 	poll_fds[poll_count].revents = 0;
     poll_count++;
->>>>>>> aperrein
 }
 
 // Supprimer un fd du tableau poll_fds
@@ -411,12 +338,3 @@ void Server::joinChannel(int fd, char *buffer)
 	}
 	
 }
-<<<<<<< HEAD
-
-void Server::addUser(int fd, const std::string &nick, const std::string &name)
-{
-	client_socket[fd] = new User(fd, nick, name);
-}
-
-=======
->>>>>>> aperrein
