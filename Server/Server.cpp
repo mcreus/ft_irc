@@ -97,8 +97,8 @@ void	Server::initArgs()
 
 void	Server::initMapCommand()
 {
-	//map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
-   // map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
+	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
+   	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
 }
 
 void 	Server::newConnection()
@@ -208,7 +208,7 @@ void	Server::acceptUser(int new_socket, std::string buff)
 	name = buff;
 	name = name.substr(name.find(":") + 1);
 	std::cout << name << std::endl;
-	client_socket[new_socket] = new User(new_socket, "nick_name", "name");
+	client_socket[new_socket] = new User(new_socket, nick_name, name);
 }
 
 void Server::Privmsg(int senderFd, char *buffer)
@@ -321,15 +321,15 @@ void Server::joinChannel(int fd, char *buffer)
 		else
 		{
 			//ajout d un utilisateur dans un channel existant
-			User &admin = _channels[channelName]->getAdmin();
+			User *admin = _channels[channelName]->getAdmin();
 			std::string success = ":" + user_name + "!~" + user_name[0] + "@localhost JOIN " + channelName + "\n";
 			std::cout << success << "\n";
 			send(fd, success.c_str(), success.length(), 0);
 			success = ":localhost 332 " + user_name + " " + channelName + " :This is my cool channel! https://localhost\n";
 			send(fd, success.c_str(), success.length(), 0);
-			success = ":localhost 333 " + user_name + " " + admin.getNickName() + "!~" + admin.getNickName()[0] + "@@localhost 1547691506\n";
+			success = ":localhost 333 " + user_name + " " + admin->getNickName() + "!~" + admin->getNickName()[0] + "@@localhost 1547691506\n";
 			send(fd, success.c_str(), success.length(), 0);
-			success = ":localhost 353 " + user_name + " @ " + channelName + " :" + user_name + " @" + admin.getNickName() + "\n";
+			success = ":localhost 353 " + user_name + " @ " + channelName + " :" + user_name + " @" + admin->getNickName() + "\n";
 			send(fd, success.c_str(), success.length(), 0);
 			success = ":localhost 366 " + user_name + " " + channelName + " :End of /NAMES list.\n";
 			send(fd, success.c_str(), success.length(), 0);
