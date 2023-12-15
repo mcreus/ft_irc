@@ -2,12 +2,12 @@
 
 Channel::Channel(User &user, std::string const &name): _name(name), _pass(""), _admin(user)
 {
-
+	this->addUser(&_admin);
 }
 
 Channel::Channel(User &user, std::string const &name, std::string const &pass): _name(name), _pass(pass), _admin(user)
 {
-
+	this->addUser(&_admin);
 }
 
 Channel::~Channel()

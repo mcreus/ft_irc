@@ -10,7 +10,7 @@ Server::Server(char **av)
 	port = atoi(av[1]);
 	pass = av[2];
 	poll_size = 20;
-    //poll_fds[poll_size + 1];
+	//poll_fds[poll_size + 1];
 }
 
 Server::~Server()
@@ -52,8 +52,8 @@ void	Server::initServer()
 	}
 	addrlen = sizeof(address);
 	poll_fds[0].fd = master_socket;
-    poll_fds[0].events = POLLIN;
-    poll_count = 1;
+	poll_fds[0].events = POLLIN;
+	poll_count = 1;
 }
 
 void	Server::initArgs()
@@ -73,69 +73,69 @@ void	Server::initArgs()
 		}
 		for (int i = 0; i < poll_count; i++) 
 		{
-            if ((poll_fds[i].revents & POLLIN) != 1) {
-                // La socket n'est pas prête à être lue
-                // on s'arrête là et on continue la boucle
-                continue ;
-            }
-            printf("[%d] Ready for I/O operation\n", poll_fds[i].fd);
-            // La socket est prête à être lue !
-            if (poll_fds[i].fd == master_socket) {
-                // La socket est notre socket serveur qui écoute le port
-                Server::newConnection();
-            }
-            else {
-                // La socket est une socket client, on va la lire
-                Server::read_data_from_socket(i);
-            }
-        }
-    }
+			if ((poll_fds[i].revents & POLLIN) != 1) {
+				// La socket n'est pas prête à être lue
+				// on s'arrête là et on continue la boucle
+				continue ;
+			}
+			printf("[%d] Ready for I/O operation\n", poll_fds[i].fd);
+			// La socket est prête à être lue !
+			if (poll_fds[i].fd == master_socket) {
+				// La socket est notre socket serveur qui écoute le port
+				Server::newConnection();
+			}
+			else {
+				// La socket est une socket client, on va la lire
+				Server::read_data_from_socket(i);
+			}
+		}
+	}
 
 }
 
 void	Server::initMapCommand()
 {
 	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
-    map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
+	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
 }
 
 void 	Server::newConnection()
 {
-    new_socket = accept(master_socket, NULL, NULL);
-    if (new_socket == -1) 
+	new_socket = accept(master_socket, NULL, NULL);
+	if (new_socket == -1) 
 	{
-        perror("accept");
+		perror("accept");
 		exit(EXIT_FAILURE);
-    }
-    add_to_poll_fds(new_socket);
+	}
+	add_to_poll_fds(new_socket);
 }
 
 void Server::read_data_from_socket(int i )
 {
-    char buffer[1024];
-    //char msg_to_send[1024];
-    int bytes_read;
-    //int dest_fd;
-    int sender_fd;
+	char buffer[1024];
+	//char msg_to_send[1024];
+	int bytes_read;
+	//int dest_fd;
+	int sender_fd;
 	//static int start = 0;
 
-    sender_fd = poll_fds[i].fd;
-    memset(&buffer, '\0', sizeof buffer);
-    bytes_read = recv(sender_fd, buffer, 2024, 0);
-    if (bytes_read <= 0) 
+	sender_fd = poll_fds[i].fd;
+	memset(&buffer, '\0', sizeof buffer);
+	bytes_read = recv(sender_fd, buffer, 2024, 0);
+	if (bytes_read <= 0) 
 	{
-        if (bytes_read == 0) 
+		if (bytes_read == 0) 
 		{
-            Server::disconnection(sender_fd);
-        }
-        else 
+			Server::disconnection(sender_fd);
+		}
+		else 
 		{
-        	std::cout << "error recev\n";
-        }
-        close(sender_fd); // Ferme la socket
-        Server::del_from_poll_fds(i);
-    }
-    else 
+			std::cout << "error recev\n";
+		}
+		close(sender_fd); // Ferme la socket
+		Server::del_from_poll_fds(i);
+	}
+	else 
 	{
 		if (client_socket.find(sender_fd) == client_socket.end())
 		{
@@ -149,7 +149,7 @@ void Server::read_data_from_socket(int i )
 				client_socket.insert(std::pair<int, User*>(sender_fd, new User(sender_fd, "nick_name", "name")));
 			}
 			//std::cout << "apres le buffer\n";
-			//start++;    	
+			//start++;		
 		}
 		else
 		{
@@ -157,8 +157,8 @@ void Server::read_data_from_socket(int i )
 			std::cout << "avant command\n";
 			this->command(sender_fd, buffer);
 		}
-    
-    }
+	
+	}
 
 }
 
@@ -187,7 +187,7 @@ void	Server::acceptUser(int new_socket)
 	if (password.find("PASS :") == std::string::npos)
 	{
 		std::cout << "Missing password\n";
-       	send(new_socket, "461 Missing password\n", strlen("461 Missing password\n"), 461);
+	   	send(new_socket, "461 Missing password\n", strlen("461 Missing password\n"), 461);
 		return ;
 	}
 	password = password.substr(6);
@@ -277,56 +277,80 @@ void	Server::disconnection(int fd)
 
 void Server::add_to_poll_fds(int new_fd) 
 {
-    // S'il n'y a pas assez de place, il faut réallouer le tableau de poll_fds
-    /*if (poll_count == poll_size) 
+	// S'il n'y a pas assez de place, il faut réallouer le tableau de poll_fds
+	/*if (poll_count == poll_size) 
 	{
-        poll_size *= 2; // Double la taille
-        poll_fds = static_cast<struct pollfd*>(realloc(poll_fds, sizeof(*poll_fds) * (poll_size)));
-    }*/
-    poll_fds[poll_count].fd = new_fd;
-    poll_fds[poll_count].events = POLLIN;
-    poll_count++;
+		poll_size *= 2; // Double la taille
+		poll_fds = static_cast<struct pollfd*>(realloc(poll_fds, sizeof(*poll_fds) * (poll_size)));
+	}*/
+	poll_fds[poll_count].fd = new_fd;
+	poll_fds[poll_count].events = POLLIN;
+	poll_count++;
 }
 
 // Supprimer un fd du tableau poll_fds
 void Server::del_from_poll_fds(int i) 
 {
-    // Copie le fd de la fin du tableau à cet index
-    poll_fds[i] = poll_fds[poll_count - 1];
-    poll_count--;
+	// Copie le fd de la fin du tableau à cet index
+	poll_fds[i] = poll_fds[poll_count - 1];
+	poll_count--;
 }
 
 void Server::joinChannel(int fd, char *buffer)
 {
-    // Extrait le nom du canal depuis la commande
-    std::string message = buffer;
-    std::istringstream iss(message);
-    std::string command, channelName;
-    iss >> command >> channelName;
+	// Extrait le nom du canal depuis la commande
+	std::string message = buffer;
+	std::istringstream iss(message);
+	std::string command, channelName;
+	iss >> command >> channelName;
+	std::map<int, User*>::iterator it = client_socket.find(fd);
+	std::string	user_name = it->second->getNickName();
 
-    // Vérifie si le canal existe
-    if (_channels.find(channelName) == _channels.end())
-    {
-        _channels[channelName] = new Channel(*(client_socket[fd]), channelName);
-        std::string success = "CHANNELCREATED " + channelName + " :Channel created successfully\n";
-        send(fd, success.c_str(), success.length(), 0);
-    }
-    // Vérifie si l'utilisateur est déjà dans le canal
-    if (_channels[channelName]->getUsers().find(fd) != _channels[channelName]->getUsers().end())
-    {
-        std::string error = "443 " + channelName + " :User is already in channel\n";
-        send(fd, error.c_str(), error.length(), 443);
-        return;
-    }
-
-    // Ajoute l'utilisateur au canal
-    _channels[channelName]->addUser(client_socket[fd]);
-    std::string success = "JOIN " + channelName + " :You have joined the channel\n";
-    send(fd, success.c_str(), success.length(), 0);
-    
+	// Vérifie si le canal existe
+	if (_channels.find(channelName) == _channels.end())
+	{
+		_channels[channelName] = new Channel(*(client_socket[fd]), channelName);
+		//std::string success = ":" + it->second->getNickName() + "!~" + it->second->getNickName()[0] + "@localhost JOIN " + channelName + "\n";
+		std::string success = ":" + user_name + "!~" + user_name[0] + "@0::1 JOIN " + channelName + "\n";
+		std::cout << success << "\n";
+		send(fd, success.c_str(), success.length(), 0);
+		success = ":localhost MODE " + channelName + " +nt\n";
+		send(fd, success.c_str(), success.length(), 0);
+		success = ":localhost 353 " + user_name + " = " + channelName + " :@" + user_name + "\n";
+		send(fd, success.c_str(), success.length(), 0);
+		success = ":localhost 366 " + user_name + " " + channelName + " :End of /NAMES list.\n";
+		send(fd, success.c_str(), success.length(), 0);
+	}
+	// Vérifie si l'utilisateur est déjà dans le canal
+	else
+	{
+		if (_channels[channelName]->getUsers().find(fd) != _channels[channelName]->getUsers().end())
+		{
+			std::string error = "443 " + channelName + " :User is already in channel\n";
+			send(fd, error.c_str(), error.length(), 443);
+		}
+		else
+		{
+			//ajout d un utilisateur dans un channel existant
+			User &admin = _channels[channelName]->getAdmin();
+			std::string success = ":" + user_name + "!~" + user_name[0] + "@localhost JOIN " + channelName + "\n";
+			std::cout << success << "\n";
+			send(fd, success.c_str(), success.length(), 0);
+			success = ":localhost 332 " + user_name + " " + channelName + " :This is my cool channel! https://localhost\n";
+			send(fd, success.c_str(), success.length(), 0);
+			success = ":localhost 333 " + user_name + " " + admin.getNickName() + "!~" + admin.getNickName()[0] + "@@localhost 1547691506\n";
+			send(fd, success.c_str(), success.length(), 0);
+			success = ":localhost 353 " + user_name + " @ " + channelName + " :" + user_name + " @" + admin.getNickName() + "\n";
+			send(fd, success.c_str(), success.length(), 0);
+			success = ":localhost 366 " + user_name + " " + channelName + " :End of /NAMES list.\n";
+			send(fd, success.c_str(), success.length(), 0);
+			_channels[channelName]->addUser(it->second);
+		}
+	}
+	
 }
 
 void Server::addUser(int fd, const std::string &nick, const std::string &name)
 {
-    client_socket[fd] = new User(fd, nick, name);
+	client_socket[fd] = new User(fd, nick, name);
 }

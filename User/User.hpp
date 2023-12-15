@@ -5,6 +5,7 @@
 # include <iomanip>
 # include <string>
 # include <unistd.h>
+# include <map>
 
 class User
 {
@@ -16,13 +17,15 @@ class User
 		std::string const	&getNickName() const;
 		std::string const	&getName() const;
 		int			getFd_user();
+		void			addPrivateConv(int, User *);
+		std::map<int, User*>	getPrivateConv();
 
 	private:
 
 		std::string	nickName;
 		std::string	name;
 		int		fd_user;
-
+		std::map<int, User*>   private_conv;
 };
 
 #endif
