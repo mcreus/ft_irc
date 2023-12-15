@@ -16,18 +16,20 @@ class Channel
         ~Channel();
         std::string const &getName() const;
         std::string const &getPass() const;
-        std::set<int> const &getUsers() const;
-        User &getAdmin() const;
+        std::map<int, User *> const &getUsers() const;
+        User *getAdmin() const;
         void addUser(User *user);
-        void removeUser(int fd);
+        void removeUser(int userId);
         
 
     private:
 
         std::string     _name;
         std::string     _pass;
-        User           &_admin;
-        std::set<int>   _users;
+        
+        User					*admin;
+        std::map<int, User *>   users;
+        int						nextUserNumber;
     
 };
 
