@@ -53,7 +53,7 @@ void Channel::removeUser(int userId)
             if (!users.empty())
                 admin = users.begin()->second;
             else
-				admin = 0;
+		admin = 0;
         }
     }
     if (users.empty())

@@ -211,15 +211,23 @@ void	Server::acceptUser(int new_socket, std::string buff)
 	client_socket[new_socket] = new User(new_socket, nick_name, name);
 }
 
-void Server::Privmsg(int senderFd, char *buffer)
+void	Server::Privmsg(int fd, char *buffer)
+{
+	std::string message = buffer;
+	//std::cout << message << std::endl;
+	if (message.find("#") == std::string::npos)
+		this->PrivmsgUser(fd, buffer);
+	else
+		this->PrivmsgChannel(fd, buffer);
+}
+
+void	Server::PrivmsgUser(int fd, char *buffer)
 {
 	std::string message = buffer;
 	std::istringstream iss(message);
-	std::string command, target, msg;
+	std::string command, target;
 	iss >> command >> target;
-	std::getline(iss, msg);
-	msg = msg.substr(msg.find_first_not_of(" \t"));
-	std::map<int, User*>::iterator senderIt = client_socket.find(senderFd);
+	std::map<int, User*>::iterator senderIt = client_socket.find(fd);
 	if (senderIt == client_socket.end())
 	{
 		std::cerr << "User not found" << std::endl;
@@ -238,12 +246,40 @@ void Server::Privmsg(int senderFd, char *buffer)
 	std::cerr << "User not found" << std::endl;
 }
 
+void	Server::PrivmsgChannel(int fd, char *buffer)
+{
+	std::string message = buffer;
+	std::istringstream iss(message);
+	std::string command, target;
+	std::string succes;
+	iss >> command >> target;
+	std::map<int, User*>::iterator senderIt = client_socket.find(fd);
+	std::map<std::string, Channel *>::iterator channel = _channels.find(target);
+	if (channel ==_channels.end())
+	{
+		std::cerr << "Channel not found" << std::endl;
+		return;
+	}
+	std::map<int, User*> user_in_ch = _channels[target]->getUsers();
+	std::map<int, User*>::iterator it = user_in_ch.begin();
+	User *admin = _channels[target]->getAdmin();
+	message = message.substr(message.find_first_of(":"));
+	succes = ":" + senderIt->second->getNickName() + "!~" + admin->getNickName()[0] + "@localhost PRIVMSG " + target + " " + message;
+	std::cout << succes << std::endl;
+	while (it != user_in_ch.end())
+	{
+		if (it->second->getNickName() != senderIt->second->getNickName())
+			send(it->second->getFd_user(), succes.c_str(), succes.length(), 0);
+		it++;
+	}
+}
+
 void	Server::command(int fd, char *buffer)
 {
 	std::map<std::string, void (Server::*)(int fd, char *buffer)>::iterator	it = map_command.begin();
 	std::string	msg = buffer;
 	std::string	command = msg.assign(msg, 0, msg.find_first_of(" \t"));
-	std::cout << std::endl << command << std::endl;
+	std::cout << std::endl << buffer << std::endl;
 	while (it != map_command.end() && it->first != command)
 		it++;
 	if (it != map_command.end())
@@ -334,6 +370,15 @@ void Server::joinChannel(int fd, char *buffer)
 			success = ":localhost 366 " + user_name + " " + channelName + " :End of /NAMES list.\n";
 			send(fd, success.c_str(), success.length(), 0);
 			_channels[channelName]->addUser(it->second);
+			success = ":" + user_name + "!" + user_name[0] + "@localhost JOIN :" + channelName + "\n";
+			std::map<int, User*> user_in_ch = _channels[channelName]->getUsers();
+			std::map<int, User*>::iterator it2 = user_in_ch.begin();
+			while (it2 != user_in_ch.end())
+			{
+				if (it2->second->getNickName() != it->second->getNickName())
+					send(it2->second->getFd_user(), success.c_str(), success.length(), 0);
+				it2++;
+			}
 		}
 	}
 	
