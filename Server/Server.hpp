@@ -29,7 +29,7 @@ class Server
         void    initServer();
         void    initArgs();
         void    newConnection();
-        void	acceptUser(int new_socket);
+        void	acceptUser(int new_socket, std::string buff);
         void    listenSocket();
         void	disconnection(int fd);
         void	sendAllClient(int fd, char *buffer);
