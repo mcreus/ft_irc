@@ -19,15 +19,7 @@ int main(int argc , char **argv)
 	Server  server(argv);
 	server.initServer();
 	server.initMapCommand();
-	while(1)   
-	{
-        //std::cout << "init" << std::endl;
-		server.initArgs();
-        //std::cout << "connec" << std::endl;
-		server.newConnection();
-        //std::cout << "socket" << std::endl;
-		server.listenSocket();        
-	}   
+	server.initArgs();
 		 
 	return 0;   
 }

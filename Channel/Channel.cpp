@@ -27,12 +27,12 @@ std::string const   &Channel::getPass() const
 
 std::set<int> const &Channel::getUsers() const
 {
-    return _users;
+    return (_users);
 }
 
 User& Channel::getAdmin() const
 {
-    return _admin;
+    return (_admin);
 }
 
 void Channel::addUser(User *user)

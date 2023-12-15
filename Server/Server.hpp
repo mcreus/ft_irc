@@ -17,6 +17,8 @@
 # include <arpa/inet.h>
 # include <sstream>
 
+#include <poll.h>
+
 class Server
 {
     public:
@@ -33,25 +35,30 @@ class Server
         void	Privmsg(int senderFd, char *buffer);
         void	initMapCommand(void);
         void	command(int fd, char *buffer);
-        void    createChannel(int fd, char *buffer);
+        void    read_data_from_socket(int i);
+        void    add_to_poll_fds(int new_socket);
+        void    del_from_poll_fds(int i);
         void    joinChannel(int fd, char *buffer);
         void    addUser(int fd, const std::string &nick, const std::string &name);
     
 
     private:
         
-        int	                                                           opt;
-        int	                                                           master_socket;
-        int	                                                           addrlen;
-        int	                                                           new_socket;
-        int	                                                           max_clients;
-        int	                                                           activity;
-        int	                                                           valread;
-        int	                                                           max_fd;
-        int	                                                           port;
-        int	                                                           i;
-        fd_set                                                         readfds;
-        std::map<int, User*>                                           client_socket;
+        int	opt;
+        int	master_socket;
+        int	addrlen;
+        int	new_socket;
+        int	max_clients;
+        int	activity;
+        int	valread;
+        int	max_fd;
+        int	port;
+        int status;
+        struct  pollfd *poll_fds;
+        int poll_size;
+        int poll_count;
+
+        std::map<int, User*>   client_socket;
         std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
         std::string	                                                   pass;
         std::map<std::string, Channel *>                               _channels;
