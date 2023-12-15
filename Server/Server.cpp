@@ -75,6 +75,8 @@ void	Server::initArgs()
 void	Server::initMapCommand()
 {
 	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
+    map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("CREATECHANNEL", &Server::createChannel));
+    map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOINCHANNEL", &Server::joinChannel));
 }
 
 void	Server::newConnection()
@@ -240,18 +242,59 @@ void	Server::disconnection(int fd)
 	}
 }
 
-void	Server::sendAllClient(int fd, char *buffer)
+void Server::createChannel(int fd, char *buffer)
 {
-	std::map<int, User*>::iterator	it = client_socket.find(fd);
-	std::map<int, User*>::iterator	it_new = client_socket.begin();
-	std::string	message = it->second->getNickName();
+    // Extrait le nom du canal depuis la commande
+    std::string message = buffer;
+    std::istringstream iss(message);
+    std::string command, channelName;
+    iss >> command >> channelName;
 
-	message.append(" ");
-	message.append(buffer);
-	std::cout << message.c_str() << std::endl;
-	for (; it_new != client_socket.end(); it_new++)
-	{
-		if (fd != it_new->first)
-			send(it_new->first, message.c_str(), message.length(), 0);
-	}
+    // Vérifie si le canal existe déjà
+    if (_channels.find(channelName) != _channels.end())
+    {
+        std::string error = "471 " + channelName + " :Channel already exists\n";
+        send(fd, error.c_str(), error.length(), 471);
+        return;
+    }
+
+    // Crée un nouveau canal et ajoute l'utilisateur actuel comme administrateur
+    _channels[channelName] = new Channel(*(client_socket[fd]), channelName);
+    std::string success = "CHANNELCREATED " + channelName + " :Channel created successfully\n";
+    send(fd, success.c_str(), success.length(), 0);
+}
+
+void Server::joinChannel(int fd, char *buffer)
+{
+    // Extrait le nom du canal depuis la commande
+    std::string message = buffer;
+    std::istringstream iss(message);
+    std::string command, channelName;
+    iss >> command >> channelName;
+
+    // Vérifie si le canal existe
+    if (_channels.find(channelName) == _channels.end())
+    {
+        std::string error = "403 " + channelName + " :No such channel\n";
+        send(fd, error.c_str(), error.length(), 403);
+        return;
+    }
+
+    // Vérifie si l'utilisateur est déjà dans le canal
+    if (_channels[channelName]->getUsers().find(fd) != _channels[channelName]->getUsers().end())
+    {
+        std::string error = "443 " + channelName + " :User is already in channel\n";
+        send(fd, error.c_str(), error.length(), 443);
+        return;
+    }
+
+    // Ajoute l'utilisateur au canal
+    _channels[channelName]->addUser(client_socket[fd]);
+    std::string success = "JOIN " + channelName + " :You have joined the channel\n";
+    send(fd, success.c_str(), success.length(), 0);
+}
+
+void Server::addUser(int fd, const std::string &nick, const std::string &name)
+{
+    client_socket[fd] = new User(fd, nick, name);
 }

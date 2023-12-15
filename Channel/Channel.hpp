@@ -4,7 +4,7 @@
 # include <iomanip>
 # include <iostream>
 # include <map>
-# include <list>
+# include <set>
 # include "../User/User.hpp"
 
 class Channel
@@ -16,16 +16,18 @@ class Channel
         ~Channel();
         std::string const &getName() const;
         std::string const &getPass() const;
-        void    createChannel(std::string const &name);
-        void    joinChannel(std::string const &name);
+        std::set<int> const &getUsers() const;
+        User &getAdmin() const;
+        void addUser(User *user);
+        void removeUser(int fd);
+        
 
     private:
 
-        int                                  _nbOfChannel;
-        std::string                          _name;
-        std::string                          _pass;
-        User                                 &_admin;
-        std::map<std::string, User*>         _userInCh;
+        std::string     _name;
+        std::string     _pass;
+        User           &_admin;
+        std::set<int>   _users;
     
 };
 

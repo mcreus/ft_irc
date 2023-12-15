@@ -9,7 +9,8 @@ SRCS	=	main.cpp \
 
 SRCS	=	test2.cpp \
 			Server/Server.cpp \
-			User/User.cpp
+			User/User.cpp \
+			Channel/Channel.cpp
 OBJS	=	$(SRCS:.cpp=.o)
 
 %.o:%.cpp

@@ -33,27 +33,28 @@ class Server
         void	Privmsg(int senderFd, char *buffer);
         void	initMapCommand(void);
         void	command(int fd, char *buffer);
-        void    createChannel();
-        void    joinChannel();
+        void    createChannel(int fd, char *buffer);
+        void    joinChannel(int fd, char *buffer);
+        void    addUser(int fd, const std::string &nick, const std::string &name);
     
 
     private:
         
-        int	opt;
-        int	master_socket;
-        int	addrlen;
-        int	new_socket;
-        int	max_clients;
-        int	activity;
-        int	valread;
-        int	max_fd;
-        int	port;
-        int	i;
-        fd_set  readfds;
-        std::map<int, User*>   client_socket;
+        int	                                                           opt;
+        int	                                                           master_socket;
+        int	                                                           addrlen;
+        int	                                                           new_socket;
+        int	                                                           max_clients;
+        int	                                                           activity;
+        int	                                                           valread;
+        int	                                                           max_fd;
+        int	                                                           port;
+        int	                                                           i;
+        fd_set                                                         readfds;
+        std::map<int, User*>                                           client_socket;
         std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
-        std::string	pass;
-        std::map<std::string, Channel *> _channel;
+        std::string	                                                   pass;
+        std::map<std::string, Channel *>                               _channels;
         //Channel _channel;
 };
 
