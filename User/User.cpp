@@ -24,7 +24,7 @@ User::User(int new_fd, std::string const &new_nickName, std::string const &new_n
 	this->nickName = new_nickName;
 	this->fd_user = new_fd;
 
-	write(new_fd, "Info Welcome in Corddis\n", 24);
+	//write(new_fd, "Info Welcome in Corddis\n", 24);
 }
 
 User::~User()

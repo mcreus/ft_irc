@@ -10,7 +10,7 @@ Server::Server(char **av)
 	port = atoi(av[1]);
 	pass = av[2];
 	poll_size = 20;
-    poll_fds = static_cast<struct pollfd*>(calloc(poll_size + 1, sizeof *poll_fds));
+    //poll_fds[poll_size + 1];
 }
 
 Server::~Server()
@@ -116,7 +116,7 @@ void Server::read_data_from_socket(int i )
     int bytes_read;
     //int dest_fd;
     int sender_fd;
-	static int start = 0;
+	//static int start = 0;
 
     sender_fd = poll_fds[i].fd;
     memset(&buffer, '\0', sizeof buffer);
@@ -136,18 +136,24 @@ void Server::read_data_from_socket(int i )
     }
     else 
 	{
-        // Renvoie le message reçu à toutes les sockets connectées
-        // à part celle du serveur et celle qui l'a envoyée
 		if (client_socket.find(sender_fd) == client_socket.end())
 		{
-			printf("[%d] Got message: %s", sender_fd, buffer);
-			if (start >= 3)
+			_buffer[sender_fd] += buffer;
+			//std::cout << sender_fd << " a recu :" << buffer;
+			
+ 			if (std::count(_buffer[sender_fd].begin(), _buffer[sender_fd].end(), '\n') >= 4)
+			{
+				std::cout << "usercreation\n";
+				std::cout << "le buffer total est :" << _buffer[sender_fd];
 				client_socket.insert(std::pair<int, User*>(sender_fd, new User(sender_fd, "nick_name", "name")));
-			start++;    	
+			}
+			//std::cout << "apres le buffer\n";
+			//start++;    	
 		}
 		else
 		{
-			start = 0;
+			//start = 0;
+			std::cout << "avant command\n";
 			this->command(sender_fd, buffer);
 		}
     
@@ -256,6 +262,7 @@ void	Server::disconnection(int fd)
 	std::cout << "Host disconnected , ip " << inet_ntoa(address.sin_addr) << " , port " << ntohs(address.sin_port) << std::endl;
 	delete client_socket[fd];
 	client_socket.erase(fd);
+	_buffer.erase(fd);
 	//close(fd);
 	if (client_socket.empty())
 		max_fd = master_socket;
@@ -270,11 +277,11 @@ void	Server::disconnection(int fd)
 void Server::add_to_poll_fds(int new_fd) 
 {
     // S'il n'y a pas assez de place, il faut réallouer le tableau de poll_fds
-    if (poll_count == poll_size) 
+    /*if (poll_count == poll_size) 
 	{
         poll_size *= 2; // Double la taille
         poll_fds = static_cast<struct pollfd*>(realloc(poll_fds, sizeof(*poll_fds) * (poll_size)));
-    }
+    }*/
     poll_fds[poll_count].fd = new_fd;
     poll_fds[poll_count].events = POLLIN;
     poll_count++;

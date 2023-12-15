@@ -7,6 +7,7 @@
 # include <unistd.h>
 # include <stdio.h>
 # include <map>
+#include <algorithm>
 # include "../User/User.hpp"
 # include "../Channel/Channel.hpp"
 
@@ -56,9 +57,10 @@ class Server
         //int	i;
         //fd_set  readfds;
         int status;
-        struct  pollfd *poll_fds;
+        struct  pollfd poll_fds[21];
         int poll_size;
         int poll_count;
+        std::map<int, std::string> _buffer;
 
         std::map<int, User*>   client_socket;
         std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
