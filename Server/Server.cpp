@@ -10,7 +10,6 @@ Server::Server(char **av)
 	port = atoi(av[1]);
 	pass = av[2];
 	poll_size = 20;
-    //poll_fds[poll_size + 1];
 }
 
 Server::~Server()
@@ -53,6 +52,7 @@ void	Server::initServer()
 	addrlen = sizeof(address);
 	poll_fds[0].fd = master_socket;
     poll_fds[0].events = POLLIN;
+	poll_fds[0].revents = 0;
     poll_count = 1;
 }
 
@@ -80,11 +80,13 @@ void	Server::initArgs()
             }
             printf("[%d] Ready for I/O operation\n", poll_fds[i].fd);
             // La socket est prête à être lue !
-            if (poll_fds[i].fd == master_socket) {
-                // La socket est notre socket serveur qui écoute le port
+            if (poll_fds[i].fd == master_socket) 
+			{
+            // La socket est notre socket serveur qui écoute le port
                 Server::newConnection();
             }
-            else {
+            else 
+			{
                 // La socket est une socket client, on va la lire
                 Server::read_data_from_socket(i);
             }
@@ -95,8 +97,8 @@ void	Server::initArgs()
 
 void	Server::initMapCommand()
 {
-	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
-    map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
+	//map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PRIVMSG", &Server::Privmsg));
+   // map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
 }
 
 void 	Server::newConnection()
@@ -113,11 +115,8 @@ void 	Server::newConnection()
 void Server::read_data_from_socket(int i )
 {
     char buffer[1024];
-    //char msg_to_send[1024];
     int bytes_read;
-    //int dest_fd;
     int sender_fd;
-	//static int start = 0;
 
     sender_fd = poll_fds[i].fd;
     memset(&buffer, '\0', sizeof buffer);
@@ -140,68 +139,60 @@ void Server::read_data_from_socket(int i )
 		if (client_socket.find(sender_fd) == client_socket.end())
 		{
 			_buffer[sender_fd] += buffer;
-			//std::cout << sender_fd << " a recu :" << buffer;
-			
- 			if (std::count(_buffer[sender_fd].begin(), _buffer[sender_fd].end(), '\n') >= 4)
-			{
-				std::cout << "usercreation\n";
-				std::cout << "le buffer total est :" << _buffer[sender_fd];
-				client_socket.insert(std::pair<int, User*>(sender_fd, new User(sender_fd, "nick_name", "name")));
-			}
-			//std::cout << "apres le buffer\n";
-			//start++;    	
+			Server::acceptUser(sender_fd, _buffer[sender_fd]);
 		}
 		else
 		{
-			//start = 0;
-			std::cout << "avant command\n";
 			this->command(sender_fd, buffer);
 		}
-    
     }
 
 }
 
-/*
-void	Server::acceptUser(int new_socket)
+
+void	Server::acceptUser(int new_socket, std::string buff)
 {
 	//variables user
 	std::string	cap_ls;
 	std::string	password;
 	std::string	nick_name;
 	std::string	name;
-	std::string	error;
-	std::map<int, User*>::iterator it = client_socket.begin();
+	int pos;
 
-	//variables read
-	char	buf[1024];
-	int	end;
+	if (std::count(buff.begin(), buff.end(), '\n') < 4)
+		return;
 
-	end = read(new_socket, buf, 1024);
-	buf[end - 1] = '\0';
-	cap_ls = buf;
+	pos = buff.find('\n');
+	cap_ls = buff.substr(0, pos);
 	std::cout << cap_ls << std::endl;
-	end = read(new_socket, buf, 1024);
-	buf[end - 1] = '\0';
-	password = buf;
+	buff.erase(0,pos + 1);
+
+	pos = buff.find('\n');
+	password = buff.substr(0, pos);
+
+	/*check si ya un passe et si c le bon
 	if (password.find("PASS :") == std::string::npos)
 	{
 		std::cout << "Missing password\n";
        	send(new_socket, "461 Missing password\n", strlen("461 Missing password\n"), 461);
 		return ;
-	}
+	}*/
 	password = password.substr(6);
 	std::cout << password << std::endl;
+	/*
 	if (password != this->pass)
 	{
 		std::cout << "Wrong password\n";
 		send(new_socket, "464 Password incorect\n", strlen("464 Password incorect\n"), 464);
 		return ;
-	}
-	end = read(new_socket, buf, 1024);
-	buf[end - 1] = '\0';
-	nick_name = buf;
+	}*/
+	buff.erase(0,pos + 1);
+
+	pos = buff.find('\n');
+	nick_name = buff.substr(0, pos);
 	nick_name = nick_name.substr(5);
+	std::cout << nick_name << std::endl;
+	/*
 	for (; it != client_socket.end(); it++)
 	{
 		if (it->second->getNickName() == nick_name)
@@ -210,13 +201,15 @@ void	Server::acceptUser(int new_socket)
 			send(new_socket, error.c_str(), error.length(), 433);
 			return ;
 		}
-	}
-	end = read(new_socket, buf, 1024);
-	buf[end - 1] = '\0';
-	name = buf;
+	}*/
+	buff.erase(0,pos + 1);
+
+
+	name = buff;
 	name = name.substr(name.find(":") + 1);
-	client_socket.insert(std::pair<int, User*>(new_socket, new User(new_socket, nick_name, name)));
-}*/
+	std::cout << name << std::endl;
+	client_socket[new_socket] = new User(new_socket, "nick_name", "name");
+}
 
 void Server::Privmsg(int senderFd, char *buffer)
 {
@@ -275,16 +268,12 @@ void	Server::disconnection(int fd)
 	}
 }
 
+// Ajouter un fd qui attend en lcture et ecriture dans le poll_fds
 void Server::add_to_poll_fds(int new_fd) 
 {
-    // S'il n'y a pas assez de place, il faut réallouer le tableau de poll_fds
-    /*if (poll_count == poll_size) 
-	{
-        poll_size *= 2; // Double la taille
-        poll_fds = static_cast<struct pollfd*>(realloc(poll_fds, sizeof(*poll_fds) * (poll_size)));
-    }*/
     poll_fds[poll_count].fd = new_fd;
-    poll_fds[poll_count].events = POLLIN;
+    poll_fds[poll_count].events = POLLIN | POLLOUT;
+	poll_fds[poll_count].revents = 0;
     poll_count++;
 }
 
@@ -324,9 +313,4 @@ void Server::joinChannel(int fd, char *buffer)
     std::string success = "JOIN " + channelName + " :You have joined the channel\n";
     send(fd, success.c_str(), success.length(), 0);
     
-}
-
-void Server::addUser(int fd, const std::string &nick, const std::string &name)
-{
-    client_socket[fd] = new User(fd, nick, name);
 }
