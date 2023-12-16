@@ -92,7 +92,6 @@ void	Server::initArgs()
             }
         }
     }
-
 }
 
 void	Server::initMapCommand()
@@ -102,6 +101,7 @@ void	Server::initMapCommand()
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("JOIN", &Server::joinChannel));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PART", &Server::partChannel));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("KICK", &Server::Kick));
+   	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("INVITE", &Server::Invite));
 }
 
 void 	Server::newConnection()
@@ -437,6 +437,24 @@ void	Server::Kick(int fd, char *buffer)
 	_channels[channelName]->removeUser(target);
 }
 
+void	Server::Invite(int fd, char *buffer)
+{
+	std::string message = buffer;
+	std::istringstream iss(message);
+	std::string command, channelName, target;
+	iss >> command >> target >> channelName;
+	std::string	user_name = client_socket.find(fd)->second->getNickName();
+	std::string	success = ":" + user_name + "~!" + user_name[0] + "@localhost INVITE " + target + " " + channelName + "\n";
+	
+	if (!this->checkChannel(channelName, fd))
+		return ;
+	if (!this->userCanActInChannel(channelName, fd))
+		return ;
+	if (checkUserInServer(target, fd) == client_socket.end())
+		return ;
+	send(checkUserInServer(target, fd)->first, success.c_str(), success.length(), 0);
+}
+
 bool	Server::checkChannel(std::string channelName, int senderFd)
 {
 	if (this->_channels.find(channelName) == this->_channels.end())
@@ -451,14 +469,9 @@ bool	Server::checkChannel(std::string channelName, int senderFd)
 
 bool	Server::checkUserInChannel(std::string channelName, int senderFd, std::string target)
 {
-	std::map<int, User*>::iterator it = this->checkUserInServer(target);
+	std::map<int, User*>::iterator it = this->checkUserInServer(target, senderFd);
 	if (it == client_socket.end())
-	{
-		std::string error = ":localhost 401 " + target + " :\n";
-		std::cerr << target << " :User not in server " << channelName << std::endl;
-		send(senderFd, error.c_str(), error.length(), 0);
 		return false;
-	}
 	std::map<int, User*> users = this->_channels[channelName]->getUsers();
 	std::map<int, User*>::iterator it2 = users.begin();
 	while (it2 != users.end() && it2->second->getNickName() != target)
@@ -495,10 +508,16 @@ bool	Server::userCanActInChannel(std::string channelName, int senderFd)
 	return true;
 }
 
-std::map<int, User*>::iterator	Server::checkUserInServer(std::string target)
+std::map<int, User*>::iterator	Server::checkUserInServer(std::string target, int senderFd)
 {
 	std::map<int, User*>::iterator it = client_socket.begin();
 	while (it != client_socket.end() && it->second->getNickName() != target)
 		it++;
+	if (it == client_socket.end())
+	{
+		std::string error = ":localhost 401 " + target + " :\n";
+		std::cerr << target << " :User not in server\n";
+		send(senderFd, error.c_str(), error.length(), 0);
+	}
 	return it;
 }

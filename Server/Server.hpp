@@ -26,29 +26,34 @@ class Server
 
 		Server(char **av);
 		~Server();
+		//init
 		void	initServer();
 		void	initArgs();
 		void	newConnection();
 		void	acceptUser(int new_socket, std::string buff);
 		void	listenSocket();
-		void	sendAllClient(int fd, char *buffer);
+		void	initMapCommand(void);
+		//command
+		void	command(int fd, char *buffer);
 		void	Privmsg(int senderFd, char *buffer);
 		void	PrivmsgUser(int fd, char *buffer);
 		void	PrivmsgChannel(int fd, char *buffer);
-		void	initMapCommand(void);
-		void	command(int fd, char *buffer);
+		void	Quit(int fd, char *buffer);
+		void	Kick(int fd, char *buffer);
+		void	Invite(int fd, char *buffer);
+		//gestion sockets
 		void	read_data_from_socket(int i);
 		void	add_to_poll_fds(int new_socket);
 		void	del_from_poll_fds(int i);
+		//action
 		void	joinChannel(int fd, char *buffer);
 		void	partChannel(int fd, char *buffer);
 		void	addUser(int fd, const std::string &nick, const std::string &name);
-		void	Quit(int fd, char *buffer);
-		void	Kick(int fd, char *buffer);
+		//checker
 		bool	checkChannel(std::string, int);
 		bool	checkUserInChannel(std::string, int, std::string);
 		bool	userCanActInChannel(std::string, int );
-		std::map<int, User*>::iterator	checkUserInServer(std::string target);
+		std::map<int, User*>::iterator	checkUserInServer(std::string, int);
 	
 
 	private:
