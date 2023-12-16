@@ -31,7 +31,6 @@ class Server
 		void	initArgs();
 		void	newConnection();
 		void	acceptUser(int new_socket, std::string buff);
-		void	listenSocket();
 		void	initMapCommand(void);
 		//command
 		void	command(int fd, char *buffer);
@@ -42,14 +41,12 @@ class Server
 		void	Kick(int fd, char *buffer);
 		void	Invite(int fd, char *buffer);
 		void	Topic(int fd, char *buffer);
+		void	Part(int fd, char *buffer);
+		void	Join(int fd, char *buffer);
 		//gestion sockets
 		void	read_data_from_socket(int i);
 		void	add_to_poll_fds(int new_socket);
 		void	del_from_poll_fds(int i);
-		//action
-		void	joinChannel(int fd, char *buffer);
-		void	partChannel(int fd, char *buffer);
-		void	addUser(int fd, const std::string &nick, const std::string &name);
 		//checker
 		bool	checkChannel(std::string, int);
 		bool	checkUserInChannel(std::string, int, std::string);
