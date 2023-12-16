@@ -102,6 +102,7 @@ void	Server::initMapCommand()
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("PART", &Server::partChannel));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("KICK", &Server::Kick));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("INVITE", &Server::Invite));
+   	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("TOPIC", &Server::Topic));
 }
 
 void 	Server::newConnection()
@@ -318,6 +319,7 @@ void	Server::joinChannel(int fd, char *buffer)
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost 366 " + user_name + " " + channelName + " :End of /NAMES list.\n";
 		send(fd, success.c_str(), success.length(), 0);
+		_channels[channelName]->setTopic(":");
 	}
 	// Vérifie si l'utilisateur est déjà dans le canal
 	else
@@ -453,6 +455,28 @@ void	Server::Invite(int fd, char *buffer)
 	if (checkUserInServer(target, fd) == client_socket.end())
 		return ;
 	send(checkUserInServer(target, fd)->first, success.c_str(), success.length(), 0);
+}
+
+void	Server::Topic(int fd, char *buffer)
+{
+	std::string message = buffer;
+	std::istringstream iss(message);
+	std::string command, channelName, topic, success;
+	iss >> command >> channelName;
+	std::string	user_name = client_socket.find(fd)->second->getNickName();
+	if (message.find_first_of(":") != std::string::npos)
+	{
+		topic = message.substr(message.find_first_of(":"));
+		this->_channels[channelName]->setTopic(topic);
+		success = ":" + user_name + "!" + user_name[0] + "@localhost TOPIC " + channelName + " " + topic + "\n";
+	}
+	else
+		success = ":localhost 332 " + command + " " + channelName + " " + _channels[channelName]->getTopic() + "\n";
+	if (!this->checkChannel(channelName, fd))
+		return ;
+	if (!this->userCanActInChannel(channelName, fd))
+		return ;
+	send(fd, success.c_str(), success.length(), 0);
 }
 
 bool	Server::checkChannel(std::string channelName, int senderFd)

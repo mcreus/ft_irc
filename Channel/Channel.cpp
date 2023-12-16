@@ -62,3 +62,12 @@ void Channel::removeUser(std::string target)
     	delete this;
 }
 
+void	Channel::setTopic(std::string new_topic)
+{
+	this->_topic = new_topic;
+}
+
+std::string	Channel::getTopic()
+{
+	return (this->_topic);
+}

@@ -22,12 +22,15 @@ class Channel
         User *getAdmin() const;
         void addUser(User *user);
         void removeUser(std::string target);
+        void	setTopic(std::string);
+        std::string	getTopic();
         
 
     private:
 
         std::string     _name;
         std::string     _pass;
+        std::string	_topic;
         
         User					*admin;
         std::map<int, User *>   users;

@@ -41,6 +41,7 @@ class Server
 		void	Quit(int fd, char *buffer);
 		void	Kick(int fd, char *buffer);
 		void	Invite(int fd, char *buffer);
+		void	Topic(int fd, char *buffer);
 		//gestion sockets
 		void	read_data_from_socket(int i);
 		void	add_to_poll_fds(int new_socket);
