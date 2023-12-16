@@ -7,9 +7,9 @@
 # include <unistd.h>
 # include <stdio.h>
 # include <map>
-#include <algorithm>
-# include "../User/User.hpp"
+# include <algorithm>
 # include "../Channel/Channel.hpp"
+# include "../User/User.hpp"
 
 //socket
 # include <sys/types.h>
@@ -22,51 +22,56 @@
 
 class Server
 {
-    public:
+	public:
 
-        Server(char **av);
-        ~Server();
-        void    initServer();
-        void    initArgs();
-        void    newConnection();
-        void	acceptUser(int new_socket, std::string buff);
-        void    listenSocket();
-        void	disconnection(int fd);
-        void	sendAllClient(int fd, char *buffer);
-        void	Privmsg(int senderFd, char *buffer);
-        void	PrivmsgUser(int fd, char *buffer);
-        void	PrivmsgChannel(int fd, char *buffer);
-        void	initMapCommand(void);
-        void	command(int fd, char *buffer);
-        void    read_data_from_socket(int i);
-        void    add_to_poll_fds(int new_socket);
-        void    del_from_poll_fds(int i);
-        void    joinChannel(int fd, char *buffer);
-        void    addUser(int fd, const std::string &nick, const std::string &name);
-    
+		Server(char **av);
+		~Server();
+		void	initServer();
+		void	initArgs();
+		void	newConnection();
+		void	acceptUser(int new_socket, std::string buff);
+		void	listenSocket();
+		void	sendAllClient(int fd, char *buffer);
+		void	Privmsg(int senderFd, char *buffer);
+		void	PrivmsgUser(int fd, char *buffer);
+		void	PrivmsgChannel(int fd, char *buffer);
+		void	initMapCommand(void);
+		void	command(int fd, char *buffer);
+		void	read_data_from_socket(int i);
+		void	add_to_poll_fds(int new_socket);
+		void	del_from_poll_fds(int i);
+		void	joinChannel(int fd, char *buffer);
+		void	partChannel(int fd, char *buffer);
+		void	addUser(int fd, const std::string &nick, const std::string &name);
+		void	Quit(int fd, char *buffer);
+		void	Kick(int fd, char *buffer);
+		bool	checkChannel(std::string, int);
+		bool	checkUserInChannel(std::string, int, std::string);
+		bool	userCanActInChannel(std::string, int );
+		std::map<int, User*>::iterator	checkUserInServer(std::string target);
+	
 
-    private:
-        
-        int	opt;
-        int	master_socket;
-        int	addrlen;
-        int	new_socket;
-        int	max_clients;
-        int	activity;
-        int	valread;
-        int	max_fd;
-        int	port;
-        int status;
-        struct  pollfd poll_fds[21];
-        int poll_size;
-        int poll_count;
-        std::map<int, std::string> _buffer;
+	private:
+		
+		int	opt;
+		int	master_socket;
+		int	addrlen;
+		int	new_socket;
+		int	max_clients;
+		int	activity;
+		int	valread;
+		int	max_fd;
+		int	port;
+		int	status;
+		struct  pollfd poll_fds[21];
+		int	poll_size;
+		int	poll_count;
+		std::map<int, std::string> _buffer;
 
-        std::map<int, User*>   client_socket;
-        std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
-        std::string	                                                   pass;
-        std::map<std::string, Channel *>                               _channels;
-        //Channel _channel;
+		std::map<int, User*>   client_socket;
+		std::map<std::string, void (Server::*)(int fd, char *buffer)>  map_command;
+		std::string	pass;
+		std::map<std::string, Channel *>	_channels;
 };
 
 #endif

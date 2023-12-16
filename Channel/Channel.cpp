@@ -42,9 +42,11 @@ void Channel::addUser(User *user)
     users[nextUserNumber++] = user;
 }
 
-void Channel::removeUser(int userId) 
+void Channel::removeUser(std::string target)
 {
-    std::map<int, User*>::iterator it = users.find(userId);
+    std::map<int, User*>::iterator it = users.begin();
+    while (it->second->getNickName() != target && it != users.end())
+    	it++;
     if (it != users.end()) 
     {
         users.erase(it);

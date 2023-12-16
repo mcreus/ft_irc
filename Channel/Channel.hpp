@@ -7,6 +7,8 @@
 # include <set>
 # include "../User/User.hpp"
 
+class User;
+
 class Channel
 {
     public:
@@ -19,7 +21,7 @@ class Channel
         std::map<int, User *> const &getUsers() const;
         User *getAdmin() const;
         void addUser(User *user);
-        void removeUser(int userId);
+        void removeUser(std::string target);
         
 
     private:

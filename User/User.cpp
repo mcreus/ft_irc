@@ -1,17 +1,4 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   User.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mcreus <mcreus@student.42perpignan.fr>     +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/11/27 14:05:16 by mcreus            #+#    #+#             */
-/*   Updated: 2023/12/07 18:31:21 by gcot             ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "User.hpp"
-
 
 User::User()
 {
@@ -24,7 +11,7 @@ User::User(int new_fd, std::string const &new_nickName, std::string const &new_n
 	this->nickName = new_nickName;
 	this->fd_user = new_fd;
 
-	//write(new_fd, "Info Welcome in Corddis\n", 24);
+	write(new_fd, "Info Welcome in Corddis\n", 24);
 }
 
 User::~User()
@@ -46,3 +33,13 @@ int	User::getFd_user()
 {
 	return (this->fd_user);
 }
+
+/*void	User::addChannel(std::string name, Channel *channel)
+{
+	user_channel[name] = channel;
+}
+
+std::map<std::string, Channel *>	User::getChannel()
+{
+	return (this->user_channel);
+}*/
