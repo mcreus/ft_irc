@@ -228,21 +228,18 @@ void	Server::PrivmsgUser(int fd, char *buffer)
 	std::string command, target;
 	iss >> command >> target;
 	std::map<int, User*>::iterator senderIt = client_socket.find(fd);
-	if (senderIt == client_socket.end())
-	{
-		std::cerr << "User not found" << std::endl;
-		return;
-	}
 	for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
 	{
 		if (it->second->getNickName() == target)
 		{
-			std::cout << "Private message from " << senderIt->second->getNickName() << " to " << target << ": " << message << std::endl;
-			std::string privateMessage = "PRIVMSG" + senderIt->second->getNickName() + ' ' + message + "\n";
+			message = message.substr(message.find_first_of(":"));
+			std::string privateMessage = ":" + senderIt->second->getNickName() + " PRIVMSG " + it->second->getNickName() + " " + message;
 			send(it->first, privateMessage.c_str(), privateMessage.length(), 0);
 			return;
-			}
+		}
 	}
+	std::string privateMessage = ":localhost 401 " + senderIt->second->getNickName() + ":\n";
+	send(senderIt->first, privateMessage.c_str(), privateMessage.length(), 0);
 	std::cerr << "User not found" << std::endl;
 }
 
@@ -257,6 +254,8 @@ void	Server::PrivmsgChannel(int fd, char *buffer)
 	std::map<std::string, Channel *>::iterator channel = _channels.find(target);
 	if (channel ==_channels.end())
 	{
+		std::string privateMessage = ":localhost 401 " + senderIt->second->getNickName() + ":\n";
+		send(senderIt->first, privateMessage.c_str(), privateMessage.length(), 0);
 		std::cerr << "Channel not found" << std::endl;
 		return;
 	}
