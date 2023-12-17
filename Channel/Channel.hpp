@@ -19,12 +19,14 @@ class Channel
         std::string const &getName() const;
         std::string const &getPass() const;
         std::map<int, User *> const &getUsers() const;
-        User *getAdmin() const;
+        User *getHost() const;
         void addUser(User *user);
         void removeUser(std::string target);
         void	setTopic(std::string);
         std::string	getTopic();
-        
+        void addAdmin(User *admin);
+        void removeAdmin(User *admin);
+        bool isUserAdmin(User *user) const;
 
     private:
 
@@ -32,8 +34,9 @@ class Channel
         std::string     _pass;
         std::string	_topic;
         
-        User					*admin;
+        User					*host;
         std::map<int, User *>   users;
+        std::set<User *>		admins;
         int						nextUserNumber;
     
 };

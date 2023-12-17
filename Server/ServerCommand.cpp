@@ -58,9 +58,9 @@ void	Server::PrivmsgChannel(int fd, char *buffer)
 		return ;
 	std::map<int, User*> user_in_ch = _channels[target]->getUsers();
 	std::map<int, User*>::iterator it = user_in_ch.begin();
-	User *admin = _channels[target]->getAdmin();
+	User *host = _channels[target]->getHost();
 	message = message.substr(message.find_first_of(":"));
-	succes = ":" + senderIt->second->getNickName() + "!~" + admin->getNickName()[0] + "@localhost PRIVMSG " + target + " " + message;
+	succes = ":" + senderIt->second->getNickName() + "!~" + host->getNickName()[0] + "@localhost PRIVMSG " + target + " " + message;
 	std::cout << succes << std::endl;
 	while (it != user_in_ch.end())
 	{
@@ -107,15 +107,15 @@ void	Server::Join(int fd, char *buffer)
 			return ;
 		}
 		//ajout d un utilisateur dans un channel existant
-		User *admin = _channels[channelName]->getAdmin();
+		User *host = _channels[channelName]->getHost();
 		std::string success = ":" + user_name + "!~" + user_name[0] + "@localhost JOIN " + channelName + "\n";
 		std::cout << success << "\n";
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost 332 " + user_name + " " + channelName + " :This is my cool channel! https://localhost\n";
 		send(fd, success.c_str(), success.length(), 0);
-		success = ":localhost 333 " + user_name + " " + admin->getNickName() + "!~" + admin->getNickName()[0] + "@@localhost 1547691506\n";
+		success = ":localhost 333 " + user_name + " " + host->getNickName() + "!~" + host->getNickName()[0] + "@@localhost 1547691506\n";
 		send(fd, success.c_str(), success.length(), 0);
-		success = ":localhost 353 " + user_name + " @ " + channelName + " :" + user_name + " @" + admin->getNickName() + "\n";
+		success = ":localhost 353 " + user_name + " @ " + channelName + " :" + user_name + " @" + host->getNickName() + "\n";
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost 366 " + user_name + " " + channelName + " :End of /NAMES list.\n";
 		send(fd, success.c_str(), success.length(), 0);
