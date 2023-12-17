@@ -76,6 +76,7 @@ void	Server::initMapCommand()
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("KICK", &Server::Kick));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("INVITE", &Server::Invite));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("TOPIC", &Server::Topic));
+   	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("MODE", &Server::Mode));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("USER", &Server::setUserName));
 }
 

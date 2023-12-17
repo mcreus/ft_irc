@@ -43,6 +43,7 @@ class Server
 		void	Topic(int fd, char *buffer);
 		void	Part(int fd, char *buffer);
 		void	Join(int fd, char *buffer);
+		void	Mode(int fd, char *buffer);
 		void	setUserName(int fd, char *buffer);
 		//gestion sockets
 		void	read_data_from_socket(int i);

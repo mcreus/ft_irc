@@ -75,17 +75,17 @@ void	Server::Join(int fd, char *buffer)
 	// Extrait le nom du canal depuis la commande
 	std::string message = buffer;
 	std::istringstream iss(message);
-	std::string command, channelName;
-	iss >> command >> channelName;
+	std::string command, channelName, password;
+	iss >> command >> channelName >> password;
 	std::map<int, User*>::iterator it = client_socket.find(fd);
 	std::string	user_name = it->second->getNickName();
 
 	// Vérifie si le canal existe
 	if (_channels.find(channelName) == _channels.end())
 	{
-		_channels[channelName] = new Channel(*(client_socket[fd]), channelName);
+		_channels[channelName] = new Channel(*(client_socket[fd]), channelName, password);
 		//std::string success = ":" + it->second->getNickName() + "!~" + it->second->getNickName()[0] + "@localhost JOIN " + channelName + "\n";
-		std::string success = ":" + user_name + "!~" + user_name[0] + "@0::1 JOIN " + channelName + "\n";
+		std::string success = ":" + user_name + "!" + user_name[0] + "@0::1 JOIN " + channelName + "\n";
 		std::cout << success << "\n";
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost MODE " + channelName + " +nt\n";
@@ -104,25 +104,62 @@ void	Server::Join(int fd, char *buffer)
 		{
 			std::string error = ":localhost 443 " + user_name + " " + channelName + " :\n";
 			std::cerr << user_name << " :User already in channel " << channelName << std::endl;
+			send(fd, error.c_str(), error.length(), 0);
+			return ;
+		}
+		if (_channels[channelName]->ChannelInvite())
+		{
+			if (!_channels[channelName]->isUserInvite(client_socket.find(fd)->second))
+			{
+				std::string error = ":localhost 473 " + channelName + " :\n";
+				std::cerr << user_name << " :User not invite in channel " << channelName << std::endl;
+				send(fd, error.c_str(), error.length(), 0);
+				return ;
+			}
+			_channels[channelName]->removeInvite(client_socket.find(fd)->second);
+		}
+		if (!_channels[channelName]->VerifPassword(password))
+		{
+			std::string error = ":localhost 475 " + channelName + " :\n";
+			std::cerr << "Invalid password in channel " << channelName << std::endl;
+			send(fd, error.c_str(), error.length(), 0);
+			return ;
+		}
+		if (!_channels[channelName]->VerifLimite())
+		{
+			std::string error = ":localhost 471 " + channelName + " :\n";
+			std::cerr << "Channel is full " << channelName << std::endl;
+			send(fd, error.c_str(), error.length(), 0);
 			return ;
 		}
 		//ajout d un utilisateur dans un channel existant
 		User *host = _channels[channelName]->getHost();
-		std::string success = ":" + user_name + "!~" + user_name[0] + "@localhost JOIN " + channelName + "\n";
+		std::string success = ":" + user_name + "!" + user_name[0] + "@localhost JOIN " + channelName + "\n";
 		std::cout << success << "\n";
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost 332 " + user_name + " " + channelName + " :" + _channels[channelName]->getTopic();
 		send(fd, success.c_str(), success.length(), 0);
-		success = ":localhost 333 " + user_name + " " + host->getNickName() + "!~" + host->getNickName()[0] + "@@localhost 1547691506\n";
+		success = ":localhost 333 " + user_name + " " + host->getNickName() + "!" + host->getNickName()[0] + "@localhost 1547691506\n";
 		send(fd, success.c_str(), success.length(), 0);
-		success = ":localhost 353 " + user_name + " @ " + channelName + " :" + user_name + " @" + host->getNickName() + "\n";
+		success = ":localhost 353 " + user_name + " @ " + channelName + " :" + user_name;
+		std::map<int, User*> user_in_ch = _channels[channelName]->getUsers();
+		std::map<int, User*>::iterator it2 = user_in_ch.begin();
+		while (it2 != user_in_ch.end())
+		{
+			if (this->_channels[channelName]->isUserAdmin(it2->second))
+				success += (" @" + it2->second->getNickName());
+			else
+				success += (" " + it2->second->getNickName());
+			it2++;
+		}
+		success += "\n";
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost 366 " + user_name + " " + channelName + " :End of /NAMES list.\n";
 		send(fd, success.c_str(), success.length(), 0);
 		_channels[channelName]->addUser(it->second);
 		success = ":" + user_name + "!" + user_name[0] + "@localhost JOIN :" + channelName + "\n";
-		std::map<int, User*> user_in_ch = _channels[channelName]->getUsers();
-		std::map<int, User*>::iterator it2 = user_in_ch.begin();
+		user_in_ch = _channels[channelName]->getUsers();
+		it2 = user_in_ch.begin();
 		while (it2 != user_in_ch.end())
 		{
 			if (it2->second->getNickName() != it->second->getNickName())
@@ -222,7 +259,6 @@ void	Server::Invite(int fd, char *buffer)
 	iss >> command >> target >> channelName;
 	std::string	user_name = client_socket.find(fd)->second->getNickName();
 	std::string	success = ":" + user_name + "~!" + user_name[0] + "@localhost INVITE " + target + " " + channelName + "\n";
-	
 	if (!this->checkChannel(channelName, fd))
 		return ;
 	if (!this->userCanActInChannel(channelName, fd))
@@ -230,6 +266,7 @@ void	Server::Invite(int fd, char *buffer)
 	if (checkUserInServer(target, fd) == client_socket.end())
 		return ;
 	send(checkUserInServer(target, fd)->first, success.c_str(), success.length(), 0);
+	this->_channels[channelName]->addInvite(checkUserInServer(target, fd)->second);
 }
 
 void	Server::Topic(int fd, char *buffer)
@@ -241,6 +278,16 @@ void	Server::Topic(int fd, char *buffer)
 	std::string	user_name = client_socket.find(fd)->second->getNickName();
 	if (message.find_first_of(":") != std::string::npos)
 	{
+		if (_channels[channelName]->ChannelTopic())
+		{
+			if (!_channels[channelName]->isUserAdmin(client_socket.find(fd)->second))
+			{
+				std::string	error = ":localhost 481 :\n";
+				send(fd, error.c_str(), error.length(), 0);
+				std::cout << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
+				return ;
+			}
+		}
 		topic = message.substr(message.find_first_of(":") + 1);
 		this->_channels[channelName]->setTopic(topic);
 		success = ":" + user_name + "!" + user_name[0] + "@localhost TOPIC " + channelName + " " + topic + "\n";
@@ -252,6 +299,46 @@ void	Server::Topic(int fd, char *buffer)
 	if (!this->userCanActInChannel(channelName, fd))
 		return ;
 	send(fd, success.c_str(), success.length(), 0);
+}
+
+void	Server::Mode(int fd, char *buffer)
+{
+	std::string message = buffer;
+	std::istringstream iss(message);
+	std::string command, channelName, mode, target;
+	iss >> command >> channelName >> mode >> target;
+	bool	bo = false;
+	
+	if (!this->checkChannel(channelName, fd))
+		return ;
+	if (!this->userCanActInChannel(channelName, fd))
+		return ;
+	if (!this->_channels[channelName]->isUserAdmin(client_socket.find(fd)->second))
+	{
+		std::string	error = ":localhost 481 :\n";
+		send(fd, error.c_str(), error.length(), 0);
+		std::cout << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
+		return ;
+	}
+	if (mode == "")
+		return ;
+	if (mode[0] == '+')
+		bo = true;
+	if (mode[1] == 'i')
+		this->_channels[channelName]->ModeInvite(bo, fd);
+	else if (mode[1] == 'k')
+		this->_channels[channelName]->ModeKey(bo, target, fd);
+	else if (mode[1] == 'o')
+		this->_channels[channelName]->ModeOp(bo, target, fd);
+	else if (mode[1] == 't')
+		this->_channels[channelName]->ModeTopic(bo, fd);
+	else if (mode[1] == 'l')
+		this->_channels[channelName]->ModeLimite(bo, std::atoi(target.c_str()), fd);
+	/*std::cout << command << std::endl;
+	std::cout << channelName << std::endl;
+	std::cout << mode << std::endl;
+	std::cout << target << std::endl;
+	(void)fd;*/
 }
 
 void	Server::setUserName(int fd, char *buffer)
