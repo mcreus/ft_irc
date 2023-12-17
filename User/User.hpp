@@ -15,11 +15,12 @@ class User
 	public:
 
 		User(void);
-		User(int new_fd, std::string const &new_nickName, std::string const &new_name);
+		User(int new_fd, std::string const &new_nickName);
 		~User(void);
 		std::string const	&getNickName() const;
 		std::string const	&getName() const;
 		int			getFd_user();
+		void			setName(std::string const &new_name);
 		//void			addChannel(std::string, Channel *);
 		//std::map<std::string, Channel *>	getChannel();
 

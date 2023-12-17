@@ -52,25 +52,19 @@ void	Server::initArgs()
 		}
 		for (int i = 0; i < poll_count; i++) 
 		{
-            if ((poll_fds[i].revents & POLLIN) != 1) {
-                // La socket n'est pas prête à être lue
-                // on s'arrête là et on continue la boucle
-                continue ;
-            }
-            printf("[%d] Ready for I/O operation\n", poll_fds[i].fd);
-            // La socket est prête à être lue !
-            if (poll_fds[i].fd == master_socket) 
-			{
-            // La socket est notre socket serveur qui écoute le port
-                Server::newConnection();
-            }
-            else 
-			{
-                // La socket est une socket client, on va la lire
-                Server::read_data_from_socket(i);
-            }
-        }
-    }
+			if ((poll_fds[i].revents & POLLIN) != 1) {
+		        // La socket n'est pas prête à être lue
+		        // on s'arrête là et on continue la boucle
+		        	continue ;
+			}
+			std::cout << "[" << poll_fds[i].fd << "] Ready for I/O operation\n";
+			// La socket est prête à être lue !
+			if (poll_fds[i].fd == master_socket) 
+				Server::newConnection();
+			else 
+				Server::read_data_from_socket(i);
+		}
+	}
 }
 
 void	Server::initMapCommand()
@@ -82,6 +76,7 @@ void	Server::initMapCommand()
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("KICK", &Server::Kick));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("INVITE", &Server::Invite));
    	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("TOPIC", &Server::Topic));
+   	map_command.insert(std::pair<std::string, void (Server::*)(int, char *)>("USER", &Server::setUserName));
 }
 
 void 	Server::newConnection()
@@ -104,54 +99,49 @@ void	Server::acceptUser(int new_socket, std::string buff)
 	std::string	name;
 	int pos;
 
-	if (std::count(buff.begin(), buff.end(), '\n') < 4)
-		return;
+	std::string	error;
 
+	if (std::count(buff.begin(), buff.end(), '\n') < 3)
+		return;
 	pos = buff.find('\n');
 	cap_ls = buff.substr(0, pos);
 	std::cout << cap_ls << std::endl;
 	buff.erase(0,pos + 1);
-
 	pos = buff.find('\n');
 	password = buff.substr(0, pos);
-
-	/*check si ya un passe et si c le bon
+	//check si ya un passe et si c le bon
 	if (password.find("PASS :") == std::string::npos)
 	{
 		std::cout << "Missing password\n";
-	   	send(new_socket, "461 Missing password\n", strlen("461 Missing password\n"), 461);
+		error = ":localhost 461 PASS :\n";
+		send(new_socket, error.c_str(), error.length(), 0);
 		return ;
-	}*/
+	}
 	password = password.substr(6);
-	std::cout << password << std::endl;
-	/*
+	if (std::count(buff.begin(), buff.end(), '\n') < 3)
+		return;
 	if (password != this->pass)
 	{
 		std::cout << "Wrong password\n";
-		send(new_socket, "464 Password incorect\n", strlen("464 Password incorect\n"), 464);
+		//error = ":localhost 464 :\n"; (mais fonctionne pas konversation)
+		error = ":localhost 461 PASS :\n";
+		send(new_socket, error.c_str(), error.length(), 0);
 		return ;
-	}*/
+	}
 	buff.erase(0,pos + 1);
-
 	pos = buff.find('\n');
 	nick_name = buff.substr(0, pos);
 	nick_name = nick_name.substr(5);
 	std::cout << nick_name << std::endl;
-	/*
-	for (; it != client_socket.end(); it++)
+	for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); it++)
 	{
 		if (it->second->getNickName() == nick_name)
 		{
-			error = "433 " + nick_name + ", nickname is already in use\n";
-			send(new_socket, error.c_str(), error.length(), 433);
+			error = ":localhost 433 " + nick_name + " :\n";
+			send(new_socket, error.c_str(), error.length(), 0);
 			return ;
 		}
-	}*/
+	}
 	buff.erase(0,pos + 1);
-
-
-	name = buff;
-	name = name.substr(name.find(":") + 1);
-	std::cout << name << std::endl;
-	client_socket[new_socket] = new User(new_socket, nick_name, name);
+	client_socket[new_socket] = new User(new_socket, nick_name);
 }
