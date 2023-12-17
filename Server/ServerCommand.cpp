@@ -111,7 +111,7 @@ void	Server::Join(int fd, char *buffer)
 		std::string success = ":" + user_name + "!~" + user_name[0] + "@localhost JOIN " + channelName + "\n";
 		std::cout << success << "\n";
 		send(fd, success.c_str(), success.length(), 0);
-		success = ":localhost 332 " + user_name + " " + channelName + " :This is my cool channel! https://localhost\n";
+		success = ":localhost 332 " + user_name + " " + channelName + " :" + _channels[channelName]->getTopic();
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost 333 " + user_name + " " + host->getNickName() + "!~" + host->getNickName()[0] + "@@localhost 1547691506\n";
 		send(fd, success.c_str(), success.length(), 0);
@@ -241,7 +241,7 @@ void	Server::Topic(int fd, char *buffer)
 	std::string	user_name = client_socket.find(fd)->second->getNickName();
 	if (message.find_first_of(":") != std::string::npos)
 	{
-		topic = message.substr(message.find_first_of(":"));
+		topic = message.substr(message.find_first_of(":") + 1);
 		this->_channels[channelName]->setTopic(topic);
 		success = ":" + user_name + "!" + user_name[0] + "@localhost TOPIC " + channelName + " " + topic + "\n";
 	}
@@ -252,4 +252,13 @@ void	Server::Topic(int fd, char *buffer)
 	if (!this->userCanActInChannel(channelName, fd))
 		return ;
 	send(fd, success.c_str(), success.length(), 0);
+}
+
+void	Server::setUserName(int fd, char *buffer)
+{
+	if (client_socket.find(fd) == client_socket.end())
+		return ;
+	std::string	name = buffer;
+	name = name.substr(name.find(":") + 1);
+	client_socket[fd]->setName(name);
 }
