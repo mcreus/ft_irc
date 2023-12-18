@@ -54,6 +54,7 @@ class Channel
         std::set<User *>	invite;
         int	nextUserNumber;
         int	limiteUser;
+        int nb_user;
         bool	i;
         bool	t;
         bool	k;

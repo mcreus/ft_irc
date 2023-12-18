@@ -1,9 +1,10 @@
 #include "Server.hpp"
 
-struct sockaddr_in address;
+int		ok = 1;
 
 void	Server::initServer()
 {
+	struct sockaddr_in address;
 	if (master_socket == 0)
 	{
 		std::cerr << "Socket failed" << std::endl;
@@ -35,15 +36,27 @@ void	Server::initServer()
     poll_count = 1;
 }
 
+void	ft_ctrlc(int n)
+{
+	if (n == SIGINT)
+		ok = 0;
+}
+
 void	Server::initArgs()
 {
-	while(1)
+	struct sigaction	act;
+	
+	act.sa_flags = SA_SIGINFO | SA_RESTART;
+	sigemptyset(&act.sa_mask);
+	act.sa_handler = &ft_ctrlc;
+	sigaction(SIGINT, &act, NULL);
+
+	while(ok)
 	{
 		status = poll(poll_fds, poll_count, 5000);
 		if (status < 0)
 		{
-			perror("poll");
-			exit(EXIT_FAILURE);
+			break;
 		}
 		else if (status ==0)
 		{
@@ -116,6 +129,7 @@ void	Server::acceptUser(int new_socket, std::string buff)
 		std::cout << "Missing password\n";
 		error = ":localhost 461 PASS :\n";
 		send(new_socket, error.c_str(), error.length(), 0);
+		_buffer[new_socket] = "";
 		return ;
 	}
 	password = password.substr(6);
@@ -127,6 +141,7 @@ void	Server::acceptUser(int new_socket, std::string buff)
 		//error = ":localhost 464 :\n"; (mais fonctionne pas konversation)
 		error = ":localhost 461 PASS :\n";
 		send(new_socket, error.c_str(), error.length(), 0);
+		_buffer[new_socket] = "";
 		return ;
 	}
 	buff.erase(0,pos + 1);
@@ -140,9 +155,11 @@ void	Server::acceptUser(int new_socket, std::string buff)
 		{
 			error = ":localhost 433 " + nick_name + " :\n";
 			send(new_socket, error.c_str(), error.length(), 0);
+			_buffer[new_socket] = "";
 			return ;
 		}
 	}
 	buff.erase(0,pos + 1);
 	client_socket[new_socket] = new User(new_socket, nick_name);
+	_buffer[new_socket] = "";
 }

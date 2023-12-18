@@ -8,6 +8,7 @@
 # include <stdio.h>
 # include <map>
 # include <algorithm>
+#include <signal.h>
 # include "../Channel/Channel.hpp"
 # include "../User/User.hpp"
 

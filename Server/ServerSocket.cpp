@@ -2,17 +2,17 @@
 
 void	Server::read_data_from_socket(int i )
 {
-	char buffer[1024];
+	char buffer[1024] = {0};
 	int bytes_read;
 	int sender_fd;
 
 	sender_fd = poll_fds[i].fd;
-	memset(&buffer, '\0', sizeof buffer);
+	//memset(&buffer, '\0', sizeof buffer);
 	bytes_read = recv(sender_fd, buffer, 2024, 0);
 	if (bytes_read <= 0)
 	{
 		if (bytes_read == 0)
-			this->Quit(sender_fd, buffer);
+			;
 		else 
 			std::cout << "error recev\n";
 		close(sender_fd); // Ferme la socket
@@ -20,13 +20,23 @@ void	Server::read_data_from_socket(int i )
 	}
 	else 
 	{
+		buffer[bytes_read] = 0;
 		if (client_socket.find(sender_fd) == client_socket.end())
 		{
 			_buffer[sender_fd] += buffer;
 			Server::acceptUser(sender_fd, _buffer[sender_fd]);
 		}
 		else
-			this->command(sender_fd, buffer);
+		{
+			_buffer[sender_fd] += buffer;
+			if (_buffer[sender_fd].find('\n') != std::string::npos)
+			{
+				char test[1024];
+				std::strcpy(test, _buffer[sender_fd].c_str());
+				this->command(sender_fd, test);
+				_buffer[sender_fd] = "";
+			}
+		}
 	}
 }
 

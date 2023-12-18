@@ -6,7 +6,9 @@ Channel::Channel(User &user, std::string const &name): _name(name), _pass(""), h
 	host = &user;
 	addAdmin(&user);
 	k = false;
+	i = false;
 	limiteUser = 0;
+	nb_user = 1;
 }
 
 Channel::Channel(User &user, std::string const &name, std::string const &pass): _name(name), _pass(pass), host(0), nextUserNumber(0)
@@ -15,7 +17,9 @@ Channel::Channel(User &user, std::string const &name, std::string const &pass): 
 	host = &user;
 	addAdmin(&user);
 	k = true;
+	i = false;
 	limiteUser = 0;
+	nb_user = 1;
 }
 
 Channel::~Channel()
@@ -46,33 +50,38 @@ User *Channel::getHost() const
 void Channel::addUser(User *user)
 {
 	users[nextUserNumber++] = user;
+	nb_user++;
 }
 
 void Channel::removeUser(std::string target)
 {
+	User *tmp;
 	std::map<int, User*>::iterator it = users.begin();
 	while (it->second->getNickName() != target && it != users.end())
 		it++;
 	if (it != users.end()) 
 	{
-		nextUserNumber--;
+		nb_user--;
 		if (isUserAdmin(it->second))
 			removeAdmin(it->second);
+		tmp = it->second;
 		users.erase(it);
-		if (host == it->second) 
+		if (host == tmp) 
 		{
 			if (!users.empty())
 			{
-				host = users.begin()->second;
-				if (!isUserAdmin(host))
+				if (!admins.empty())
+					host = *admins.begin();
+				else
+				{
+					host = users.begin()->second;
 					ModeOp(true, host->getNickName(), host->getFd_user());
+				}
 			}
 			else
 				host = 0;
 		}
 	}
-	if (users.empty())
-		delete this;
 }
 
 void Channel::addAdmin(User *admin)
@@ -308,7 +317,7 @@ bool	Channel::VerifPassword(std::string password)
 
 bool	Channel::VerifLimite()
 {
-	if (limiteUser <= nextUserNumber && limiteUser != 0 && l)
+	if (limiteUser <= nb_user && limiteUser != 0 && l)
 		return (false);
 	return (true);
 }

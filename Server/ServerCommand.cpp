@@ -6,6 +6,8 @@ void	Server::command(int fd, char *buffer)
 	std::string	msg = buffer;
 	std::string	command = msg.assign(msg, 0, msg.find_first_of(" \t"));
 	std::cout << buffer << std::endl;
+	if (command[0] == '/')
+		command = command.substr(1);
 	while (it != map_command.end() && it->first != command)
 		it++;
 	if (it != map_command.end())
@@ -137,7 +139,7 @@ void	Server::Join(int fd, char *buffer)
 		std::string success = ":" + user_name + "!" + user_name[0] + "@localhost JOIN " + channelName + "\n";
 		std::cout << success << "\n";
 		send(fd, success.c_str(), success.length(), 0);
-		success = ":localhost 332 " + user_name + " " + channelName + " :" + _channels[channelName]->getTopic();
+		success = ":localhost 332 " + user_name + " " + channelName + " :" + _channels[channelName]->getTopic() + "\n";
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost 333 " + user_name + " " + host->getNickName() + "!" + host->getNickName()[0] + "@localhost 1547691506\n";
 		send(fd, success.c_str(), success.length(), 0);
@@ -199,16 +201,18 @@ void	Server::Part(int fd, char *buffer)
 void	Server::Quit(int fd, char *buffer)
 {
 	std::string	user_name = client_socket.find(fd)->second->getNickName();
-	if (client_socket.empty())
-		max_fd = master_socket;
-	else
+	std::map<std::string, Channel*>::iterator it_ch = _channels.begin();
+	while (it_ch != _channels.end())
 	{
-		std::map<int, User*>::iterator	it_new = client_socket.end();
-		it_new--;
-		max_fd = it_new->first;
+		//std::cout << it_ch->first << std::endl;
+		if (this->checkUserInChannel(it_ch->first, fd, user_name))
+		{
+			it_ch->second->removeUser(user_name);
+		}
+		it_ch++;
 	}
 	std::map<int, User*>::iterator it = client_socket.begin();
-	std::string success = ":" + user_name + "!~" + user_name[0] + "@localhost QUIT : " + buffer;
+	std::string success = ":" + user_name + "!" + user_name[0] + "@localhost QUIT :" + buffer;
 	while (it != client_socket.end())
 	{
 		send(it->second->getFd_user(), success.c_str(), success.length(), 0);
@@ -217,6 +221,14 @@ void	Server::Quit(int fd, char *buffer)
 	delete client_socket[fd];
 	client_socket.erase(fd);
 	_buffer.erase(fd);
+	if (client_socket.empty())
+		max_fd = master_socket;
+	else
+	{
+		std::map<int, User*>::iterator	it_new = client_socket.end();
+		it_new--;
+		max_fd = it_new->first;
+	}
 }
 
 void	Server::Kick(int fd, char *buffer)
@@ -233,6 +245,13 @@ void	Server::Kick(int fd, char *buffer)
 		return ;
 	if (!this->checkUserInChannel(channelName, fd, target))
 		return ;
+	if (!this->_channels[channelName]->isUserAdmin(client_socket.find(fd)->second))
+	{
+		std::string	error = ":localhost 481 :\n";
+		send(fd, error.c_str(), error.length(), 0);
+		std::cout << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
+		return ;
+	}
 	if (message.find_first_of(":") != std::string::npos)
 	{
 		reason = message.substr(message.find_first_of(":"));
