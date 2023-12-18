@@ -16,7 +16,7 @@ int main(int argc , char **argv)
 {
 	if (argc != 3)
     {
-        std::cerr << "Error you program must be launch with <name of program> <port> <password>"
+        std::cerr << "Error you program must be launch with <name of program> <port> <password>";
 		return (0);
     }
 	Server  server(argv);
