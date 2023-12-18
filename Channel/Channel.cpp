@@ -5,6 +5,7 @@ Channel::Channel(User &user, std::string const &name): _name(name), _pass(""), h
 	addUser(&user);
 	host = &user;
 	addAdmin(&user);
+    t = false;
 	k = false;
 	i = false;
 	limiteUser = 0;
@@ -16,6 +17,7 @@ Channel::Channel(User &user, std::string const &name, std::string const &pass): 
 	addUser(&user);
 	host = &user;
 	addAdmin(&user);
+    t = false;
 	k = true;
 	i = false;
 	limiteUser = 0;
