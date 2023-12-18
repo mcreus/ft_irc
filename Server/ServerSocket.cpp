@@ -15,7 +15,7 @@ void	Server::read_data_from_socket(int i )
 			;
 		else 
 			std::cout << "error recev\n";
-		close(sender_fd); // Ferme la socket
+		close(sender_fd); // Close socket
 		Server::del_from_poll_fds(i);
 	}
 	else 
@@ -40,7 +40,7 @@ void	Server::read_data_from_socket(int i )
 	}
 }
 
-// Ajouter un fd qui attend en lcture et ecriture dans le poll_fds
+// Add an fd that waits for reading and writing in poll_fds
 void	Server::add_to_poll_fds(int new_fd) 
 {
     poll_fds[poll_count].fd = new_fd;
@@ -49,10 +49,10 @@ void	Server::add_to_poll_fds(int new_fd)
     poll_count++;
 }
 
-// Supprimer un fd du tableau poll_fds
+// Delete an fd from the poll_fds table
 void	Server::del_from_poll_fds(int i) 
 {
-	// Copie le fd de la fin du tableau à cet index
+// Copy the fd from the end of the array to this index
 	poll_fds[i] = poll_fds[poll_count - 1];
 	poll_count--;
 }

@@ -32,9 +32,9 @@ bool	Server::checkUserInChannel(std::string channelName, int senderFd, std::stri
 }
 
 //################################################//
-//      different de "checkUserInChannel()"       //
-//ici on verifie si le client qui envoi la demande//
-//       est dans le channel, pas la cible        //
+//       different from "checkUserInChannel()"    //
+// here we check if the client sending the request//
+//        is in the channel, not the target       //
 //################################################//
 bool	Server::userCanActInChannel(std::string channelName, int senderFd)
 {

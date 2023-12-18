@@ -74,7 +74,7 @@ void	Server::PrivmsgChannel(int fd, char *buffer)
 
 void	Server::Join(int fd, char *buffer)
 {
-	// Extrait le nom du canal depuis la commande
+	//Extract the channel name from the command
 	std::string message = buffer;
 	std::istringstream iss(message);
 	std::string command, channelName, password;
@@ -82,7 +82,7 @@ void	Server::Join(int fd, char *buffer)
 	std::map<int, User*>::iterator it = client_socket.find(fd);
 	std::string	user_name = it->second->getNickName();
 
-	// Vérifie si le canal existe
+	// check if channel exist
 	if (_channels.find(channelName) == _channels.end())
 	{
 		_channels[channelName] = new Channel(*(client_socket[fd]), channelName, password);
@@ -98,10 +98,10 @@ void	Server::Join(int fd, char *buffer)
 		send(fd, success.c_str(), success.length(), 0);
 		_channels[channelName]->setTopic(":");
 	}
-	// Vérifie si l'utilisateur est déjà dans le canal
+	// Check if the user is already in the channel
 	else
 	{
-		//verifie si deja dans le channel
+        //check if already in the channel
 		if (_channels[channelName]->getUsers().find(fd) != _channels[channelName]->getUsers().end())
 		{
 			std::string error = ":localhost 443 " + user_name + " " + channelName + " :\n";
@@ -134,7 +134,7 @@ void	Server::Join(int fd, char *buffer)
 			send(fd, error.c_str(), error.length(), 0);
 			return ;
 		}
-		//ajout d un utilisateur dans un channel existant
+		//add a user to an existing channel
 		User *host = _channels[channelName]->getHost();
 		std::string success = ":" + user_name + "!" + user_name[0] + "@localhost JOIN " + channelName + "\n";
 		std::cout << success << "\n";
@@ -178,6 +178,7 @@ void	Server::Part(int fd, char *buffer)
 	std::string command, channelName;
 	iss >> command >> channelName;
 	std::map<int, User*>::iterator it = client_socket.find(fd);
+    std::map<std::string, Channel*>::iterator   itc = _channels.begin();
 	std::string	user_name = it->second->getNickName();
 
 	if (_channels[channelName]->getUsers().find(fd) != _channels[channelName]->getUsers().end())
@@ -196,6 +197,13 @@ void	Server::Part(int fd, char *buffer)
 		it2++;
 	}
 	_channels[channelName]->removeUser(user_name);
+    while (itc != _channels.end() && itc != _channels.find(channelName))
+        itc++;
+    if (itc != _channels.end() && _channels[channelName]->getUsers().empty())
+    {
+        delete (itc->second);
+        _channels.erase(itc);
+    }
 }
 
 void	Server::Quit(int fd, char *buffer)
