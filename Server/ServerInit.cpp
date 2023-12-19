@@ -60,18 +60,18 @@ void	Server::initArgs()
 		}
 		else if (status ==0)
 		{
-			std::cout << "Waiting ..." << std::endl;
+			std::cout << "Waiting for connection..." << std::endl;
 			continue;
 		}
 		for (int i = 0; i < poll_count; i++) 
 		{
 			if ((poll_fds[i].revents & POLLIN) != 1) {
-		        // La socket n'est pas prête à être lue
-		        // on s'arrête là et on continue la boucle
+		        // The socket is not ready to read
+		        // we stop there and continue the loop
 		        	continue ;
 			}
-			std::cout << "[" << poll_fds[i].fd << "] Ready for I/O operation\n";
-			// La socket est prête à être lue !
+			std::cout << "[" << poll_fds[i].fd << "] Ready for I operation\n";
+			// The socket is ready to read!
 			if (poll_fds[i].fd == master_socket) 
 				Server::newConnection();
 			else 
@@ -138,7 +138,6 @@ void	Server::acceptUser(int new_socket, std::string buff)
 	if (password != this->pass)
 	{
 		std::cout << "Wrong password\n";
-		//error = ":localhost 464 :\n"; (mais fonctionne pas konversation)
 		error = ":localhost 461 PASS :\n";
 		send(new_socket, error.c_str(), error.length(), 0);
 		_buffer[new_socket] = "";

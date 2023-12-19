@@ -5,7 +5,7 @@ void	Server::command(int fd, char *buffer)
 	std::map<std::string, void (Server::*)(int fd, char *buffer)>::iterator	it = map_command.begin();
 	std::string	msg = buffer;
 	std::string	command = msg.assign(msg, 0, msg.find_first_of(" \t"));
-	std::cout << buffer << std::endl;
+	std::cout << "Receive " << buffer << std::endl;
 	if (command[0] == '/')
 		command = command.substr(1);
 	while (it != map_command.end() && it->first != command)
@@ -17,7 +17,6 @@ void	Server::command(int fd, char *buffer)
 void	Server::Privmsg(int fd, char *buffer)
 {
 	std::string message = buffer;
-	//std::cout << message << std::endl;
 	if (message.find("#") == std::string::npos)
 		this->PrivmsgUser(fd, buffer);
 	else
@@ -43,7 +42,7 @@ void	Server::PrivmsgUser(int fd, char *buffer)
 	}
 	std::string privateMessage = ":localhost 401 " + target + " :\n";
 	send(senderIt->first, privateMessage.c_str(), privateMessage.length(), 0);
-	std::cerr << "User not found" << std::endl;
+	std::cerr << "Send " << "User not found" << std::endl;
 }
 
 void	Server::PrivmsgChannel(int fd, char *buffer)
@@ -63,7 +62,7 @@ void	Server::PrivmsgChannel(int fd, char *buffer)
 	User *host = _channels[target]->getHost();
 	message = message.substr(message.find_first_of(":"));
 	succes = ":" + senderIt->second->getNickName() + "!~" + host->getNickName()[0] + "@localhost PRIVMSG " + target + " " + message;
-	std::cout << succes << std::endl;
+	std::cout << "Send " << succes << std::endl;
 	while (it != user_in_ch.end())
 	{
 		if (it->second->getNickName() != senderIt->second->getNickName())
@@ -88,7 +87,7 @@ void	Server::Join(int fd, char *buffer)
 		_channels[channelName] = new Channel(*(client_socket[fd]), channelName, password);
 		//std::string success = ":" + it->second->getNickName() + "!~" + it->second->getNickName()[0] + "@localhost JOIN " + channelName + "\n";
 		std::string success = ":" + user_name + "!" + user_name[0] + "@0::1 JOIN " + channelName + "\n";
-		std::cout << success << "\n";
+		std::cout << "Send " << success << "\n";
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost MODE " + channelName + " +nt\n";
 		send(fd, success.c_str(), success.length(), 0);
@@ -137,7 +136,7 @@ void	Server::Join(int fd, char *buffer)
 		//add a user to an existing channel
 		User *host = _channels[channelName]->getHost();
 		std::string success = ":" + user_name + "!" + user_name[0] + "@localhost JOIN " + channelName + "\n";
-		std::cout << success << "\n";
+		std::cout << "Send " << success << "\n";
 		send(fd, success.c_str(), success.length(), 0);
 		success = ":localhost 332 " + user_name + " " + channelName + " :" + _channels[channelName]->getTopic() + "\n";
 		send(fd, success.c_str(), success.length(), 0);
@@ -212,11 +211,8 @@ void	Server::Quit(int fd, char *buffer)
 	std::map<std::string, Channel*>::iterator it_ch = _channels.begin();
 	while (it_ch != _channels.end())
 	{
-		//std::cout << it_ch->first << std::endl;
 		if (this->checkUserInChannel(it_ch->first, fd, user_name))
-		{
 			it_ch->second->removeUser(user_name);
-		}
 		it_ch++;
 	}
 	std::map<int, User*>::iterator it = client_socket.begin();
@@ -257,7 +253,7 @@ void	Server::Kick(int fd, char *buffer)
 	{
 		std::string	error = ":localhost 481 :\n";
 		send(fd, error.c_str(), error.length(), 0);
-		std::cout << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
+		std::cout << "Send " << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
 		return ;
 	}
 	if (message.find_first_of(":") != std::string::npos)
@@ -272,7 +268,7 @@ void	Server::Kick(int fd, char *buffer)
 	while (it2 != user_in_ch.end())
 	{
 		send(it2->second->getFd_user(), success.c_str(), success.length(), 0);
-		std::cout << it2->second->getNickName() << std::endl;
+		std::cout << "Send " << it2->second->getNickName() << std::endl;
 		it2++;
 	}
 	_channels[channelName]->removeUser(target);
@@ -293,6 +289,7 @@ void	Server::Invite(int fd, char *buffer)
 	if (checkUserInServer(target, fd) == client_socket.end())
 		return ;
 	send(checkUserInServer(target, fd)->first, success.c_str(), success.length(), 0);
+    std::cout << "Send " << success << std::endl;
 	this->_channels[channelName]->addInvite(checkUserInServer(target, fd)->second);
 }
 
@@ -311,7 +308,7 @@ void	Server::Topic(int fd, char *buffer)
 			{
 				std::string	error = ":localhost 481 :\n";
 				send(fd, error.c_str(), error.length(), 0);
-				std::cout << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
+				std::cout << "Send " << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
 				return ;
 			}
 		}
@@ -326,6 +323,7 @@ void	Server::Topic(int fd, char *buffer)
 	if (!this->userCanActInChannel(channelName, fd))
 		return ;
 	send(fd, success.c_str(), success.length(), 0);
+    std::cout << "Send " << success << std::endl;
 }
 
 void	Server::Mode(int fd, char *buffer)
@@ -344,7 +342,7 @@ void	Server::Mode(int fd, char *buffer)
 	{
 		std::string	error = ":localhost 481 :\n";
 		send(fd, error.c_str(), error.length(), 0);
-		std::cout << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
+		std::cout << "Send " << client_socket.find(fd)->second->getNickName() << " :User not operator in channel " << channelName << std::endl;
 		return ;
 	}
 	if (mode == "")
@@ -361,11 +359,6 @@ void	Server::Mode(int fd, char *buffer)
 		this->_channels[channelName]->ModeTopic(bo, fd);
 	else if (mode[1] == 'l')
 		this->_channels[channelName]->ModeLimite(bo, std::atoi(target.c_str()), fd);
-	/*std::cout << command << std::endl;
-	std::cout << channelName << std::endl;
-	std::cout << mode << std::endl;
-	std::cout << target << std::endl;
-	(void)fd;*/
 }
 
 void	Server::setUserName(int fd, char *buffer)

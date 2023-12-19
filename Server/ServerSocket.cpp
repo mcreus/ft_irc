@@ -7,7 +7,6 @@ void	Server::read_data_from_socket(int i )
 	int sender_fd;
 
 	sender_fd = poll_fds[i].fd;
-	//memset(&buffer, '\0', sizeof buffer);
 	bytes_read = recv(sender_fd, buffer, 2024, 0);
 	if (bytes_read <= 0)
 	{
