@@ -17,6 +17,15 @@ void	Server::command(int fd, char *buffer)
 void	Server::Privmsg(int fd, char *buffer)
 {
 	std::string message = buffer;
+
+	if (message.find_first_of(":") == std::string::npos)
+	{
+		std::string privateMessage = "Error Missing the \":\" \n";
+		send(fd, privateMessage.c_str(), privateMessage.length(), 0);
+		std::cerr << "Send " << privateMessage << std::endl;
+		return;
+	}
+
 	if (message.find("#") == std::string::npos)
 		this->PrivmsgUser(fd, buffer);
 	else
@@ -29,6 +38,7 @@ void	Server::PrivmsgUser(int fd, char *buffer)
 	std::istringstream iss(message);
 	std::string command, target;
 	iss >> command >> target;
+
 	std::map<int, User*>::iterator senderIt = client_socket.find(fd);
 	for (std::map<int, User*>::iterator it = client_socket.begin(); it != client_socket.end(); ++it)
 	{
@@ -42,7 +52,7 @@ void	Server::PrivmsgUser(int fd, char *buffer)
 	}
 	std::string privateMessage = ":localhost 401 " + target + " :\n";
 	send(senderIt->first, privateMessage.c_str(), privateMessage.length(), 0);
-	std::cerr << "Send " << "User not found" << std::endl;
+	std::cerr << "Send " << privateMessage << std::endl;
 }
 
 void	Server::PrivmsgChannel(int fd, char *buffer)
