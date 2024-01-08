@@ -59,7 +59,6 @@ class Channel
         bool	t;
         bool	k;
         bool	l;
-    
 };
 
 #endif

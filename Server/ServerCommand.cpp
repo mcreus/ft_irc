@@ -187,9 +187,8 @@ void	Server::Part(int fd, char *buffer)
 	std::string command, channelName;
 	iss >> command >> channelName;
 	std::map<int, User*>::iterator it = client_socket.find(fd);
-    std::map<std::string, Channel*>::iterator   itc = _channels.begin();
+	std::map<std::string, Channel*>::iterator   itc = _channels.find(channelName);
 	std::string	user_name = it->second->getNickName();
-
 	if (_channels[channelName]->getUsers().find(fd) != _channels[channelName]->getUsers().end())
 	{
 		std::string error = ":localhost 442 " + channelName + " :\n";
@@ -206,13 +205,11 @@ void	Server::Part(int fd, char *buffer)
 		it2++;
 	}
 	_channels[channelName]->removeUser(user_name);
-    while (itc != _channels.end() && itc != _channels.find(channelName))
-        itc++;
-    if (itc != _channels.end() && _channels[channelName]->getUsers().empty())
-    {
-        delete (itc->second);
-        _channels.erase(itc);
-    }
+	if (itc != _channels.end() && _channels[channelName]->getUsers().empty())
+	{
+		delete (itc->second);
+		_channels.erase(itc);
+	}
 }
 
 void	Server::Quit(int fd, char *buffer)
@@ -221,7 +218,7 @@ void	Server::Quit(int fd, char *buffer)
 	std::map<std::string, Channel*>::iterator it_ch = _channels.begin();
 	while (it_ch != _channels.end())
 	{
-		if (this->checkUserInChannel(it_ch->first, fd, user_name))
+		if (it_ch->second->getUsers().find(fd) != it_ch->second->getUsers().end())
 			it_ch->second->removeUser(user_name);
 		it_ch++;
 	}
